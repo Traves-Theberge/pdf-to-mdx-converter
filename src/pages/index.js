@@ -1,3 +1,4 @@
+// src/pages/index.js
 "use client";
 
 import { useState, useRef } from 'react';
@@ -6,7 +7,7 @@ import MdxEditor from '../components/MdxEditor';
 import FileUploader from '../components/FileUploader';
 import ProgressBar from '../components/ProgressBar';
 import MdxPreview from '../components/MdxPreview';
-import { convertPdfToMdx } from '../utils/PdfToMdxConverter';
+import { convertPdfToMdx } from '../utils/pdfToMdxConverter';
 import { saveAs } from 'file-saver';
 
 const HomePage = () => {

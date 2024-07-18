@@ -1,16 +1,19 @@
+// src/components/MdxEditor.js
 import React from 'react';
+import dynamic from 'next/dynamic';
+
+const CodeMirror = dynamic(
+  () => import('@uiw/react-codemirror').then((mod) => mod.default),
+  { ssr: false }
+);
 
 const MdxEditor = ({ mdxContent, setMdxContent }) => {
-  const handleChange = (event) => {
-    setMdxContent(event.target.value);
-  };
-
   return (
-    <textarea
-      className="flex-grow p-2 border rounded mb-4"
+    <CodeMirror
       value={mdxContent}
-      onChange={handleChange}
-      placeholder="Edit MDX content here..."
+      height="100%"
+      onChange={(value) => setMdxContent(value)}
+      className="flex-grow border rounded mb-4"
     />
   );
 };

@@ -1,94 +1,92 @@
+// src/utils/pdfToMdxConverter.js
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import 'pdfjs-dist/build/pdf.worker.entry';
 
-const extractTextContent = async (page) => {
+const extractLayoutInfo = async (page) => {
   const textContent = await page.getTextContent();
+  const viewport = page.getViewport({ scale: 1 });
+
   return textContent.items.map(item => ({
-    str: item.str,
-    transform: item.transform,
+    text: item.str,
+    x: item.transform[4],
+    y: viewport.height - item.transform[5],
+    width: item.width,
+    height: item.height,
     fontName: item.fontName,
-    fontSize: item.height
+    fontSize: item.transform[0]
   }));
 };
 
-const classifyTextItems = (items) => {
-  return items.map((item) => {
-    let type = 'paragraph';
-    if (item.fontSize >= 24) {
-      type = 'h1';
-    } else if (item.fontSize >= 20) {
-      type = 'h2';
-    } else if (item.fontSize >= 16) {
-      type = 'h3';
-    } else if (item.fontSize >= 14) {
-      type = 'h4';
-    } else if (item.fontSize >= 12) {
-      type = 'h5';
-    } else if (item.fontSize >= 10) {
-      type = 'h6';
-    } else if (item.str.match(/^[-*•]\s+/)) {
-      type = 'listItem';
-    } else if (item.str.match(/^\d+\./)) {
-      type = 'listItem';
-    }
-
-    return {
-      ...item,
-      type,
-    };
+const classifyElements = (layout) => {
+  return layout.map(item => {
+    if (item.fontSize > 16) return { ...item, type: 'header' };
+    if (item.text.trim().startsWith('•')) return { ...item, type: 'listItem' };
+    return { ...item, type: 'paragraph' };
   });
 };
 
-const generateMarkdown = (items) => {
-  let markdown = '';
-  items.forEach((item) => {
-    switch (item.type) {
-      case 'h1':
-        markdown += `# ${item.str}\n\n`;
-        break;
-      case 'h2':
-        markdown += `## ${item.str}\n\n`;
-        break;
-      case 'h3':
-        markdown += `### ${item.str}\n\n`;
-        break;
-      case 'h4':
-        markdown += `#### ${item.str}\n\n`;
-        break;
-      case 'h5':
-        markdown += `##### ${item.str}\n\n`;
-        break;
-      case 'h6':
-        markdown += `###### ${item.str}\n\n`;
+const generateStructuredContent = (classifiedElements) => {
+  const structure = [];
+  let currentParagraph = '';
+
+  classifiedElements.forEach(element => {
+    switch(element.type) {
+      case 'header':
+        if (currentParagraph) {
+          structure.push({ type: 'paragraph', content: currentParagraph.trim() });
+          currentParagraph = '';
+        }
+        structure.push({ type: 'header', content: element.text, level: Math.floor(24 / element.fontSize) });
         break;
       case 'listItem':
-        markdown += `* ${item.str}\n`;
+        if (currentParagraph) {
+          structure.push({ type: 'paragraph', content: currentParagraph.trim() });
+          currentParagraph = '';
+        }
+        structure.push({ type: 'listItem', content: element.text.trim() });
         break;
       default:
-        markdown += `${item.str} `;
-        break;
+        currentParagraph += element.text + ' ';
     }
   });
 
-  return markdown;
+  if (currentParagraph) {
+    structure.push({ type: 'paragraph', content: currentParagraph.trim() });
+  }
+
+  return structure;
+};
+
+const generateMdxFromStructure = (structure) => {
+  return structure.map(element => {
+    switch(element.type) {
+      case 'header':
+        return '#'.repeat(element.level) + ' ' + element.content + '\n\n';
+      case 'listItem':
+        return '* ' + element.content + '\n';
+      case 'paragraph':
+        return element.content + '\n\n';
+      default:
+        return '';
+    }
+  }).join('');
 };
 
 const convertPdfToMdx = async (pdfFile, setProgress) => {
   const loadingTask = pdfjsLib.getDocument(pdfFile);
   const pdf = await loadingTask.promise;
-  let content = '';
+  let mdxContent = '';
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
-    const textItems = await extractTextContent(page);
-    const classifiedItems = classifyTextItems(textItems);
-    const pageMarkdown = generateMarkdown(classifiedItems);
-    
-    content += `\n## Page ${i}\n\n${pageMarkdown}\n`;
+    const layout = await extractLayoutInfo(page);
+    const classifiedElements = classifyElements(layout);
+    const structuredContent = generateStructuredContent(classifiedElements);
+    mdxContent += generateMdxFromStructure(structuredContent);
     setProgress((i / pdf.numPages) * 100);
   }
 
-  return content;
+  return mdxContent;
 };
 
 export { convertPdfToMdx };
