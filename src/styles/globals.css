@@ -2,30 +2,4 @@
 @tailwind components;
 @tailwind utilities;
 
-.pdf-viewer {
-  height: 100%;
-  border-right: 1px solid #ccc;
-}
-
-.mdx-editor {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.mdx-textarea {
-  flex: 1;
-  width: 100%;
-  border: 1px solid #ccc;
-  padding: 10px;
-  font-family: monospace;
-  font-size: 14px;
-}
-
-.mdx-preview {
-  flex: 1;
-  width: 100%;
-  border-top: 1px solid #ccc;
-  padding: 10px;
-  overflow-y: auto;
-}
+/* Custom styles (if any) can be added here */
