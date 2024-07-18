@@ -4,6 +4,9 @@ This project is a web application designed to convert PDF files into MDX (Markdo
 
 While the project is functional, there are areas that need improvement, and the conversion process isn't perfect yet.
 
+![image](https://github.com/user-attachments/assets/22ee8184-d2f7-4878-8879-a785735fbfa6)
+
+
 ## Features
 
 - **PDF Upload**: Upload a PDF file for conversion.
