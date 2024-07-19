@@ -1,4 +1,4 @@
-# PDF to MDX Converter
+# PDF to MDX Converter With PDF VIEWER, MDX Viewer and MDX Editor. 
 
 This project is a web application designed to convert PDF files into MDX (Markdown with JSX) format. Users can upload a PDF, view its content, convert it to MDX, edit the MDX content, and preview the result.
 
