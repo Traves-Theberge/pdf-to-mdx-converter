@@ -1,76 +1,112 @@
-# PDF to MDX Converter With PDF VIEWER, MDX Viewer and MDX Editor. 
+# PDF to MDX Converter
 
 This project is a web application designed to convert PDF files into MDX (Markdown with JSX) format. Users can upload a PDF, view its content, convert it to MDX, edit the MDX content, and preview the result.
 
-While the project is functional, there are areas that need improvement, and the conversion process isn't perfect yet.
+The application leverages `pdfjs-dist` to parse PDF files and applies a set of heuristics to transform the extracted layout information into structured MDX content.
 
 ![image](https://github.com/user-attachments/assets/22ee8184-d2f7-4878-8879-a785735fbfa6)
 
+## Functionality Overview
 
-## Features
+The core functionality is to provide a user-friendly interface for converting PDF documents into editable MDX. This is useful for content creators, developers, and anyone looking to repurpose PDF content for web-based platforms that support MDX.
 
-- **PDF Upload**: Upload a PDF file for conversion.
-- **PDF Viewer**: View the uploaded PDF file.
-- **Conversion to MDX**: Convert the PDF content into MDX format.
-- **MDX Editor**: Edit the converted MDX content using a rich text editor.
-- **MDX Preview**: Preview the MDX content as rendered HTML.
-- **Progress Indicator**: Track the conversion progress.
-- **File Operations**: Save the MDX content to a file, clear the editor, and reset the application.
+The conversion process attempts to identify structural elements like headers, paragraphs, and lists from the PDF's layout and text properties.
+
+## Key Features
+
+- **PDF Upload**: Upload a PDF file from your local machine.
+- **PDF Viewer**: View the uploaded PDF file directly in the browser.
+- **MDX Conversion**:
+    - **Improved Header Detection**: Identifies H1, H2, and H3 headers based on font size variations.
+    - **Expanded List Item Support**: Recognizes various bullet point styles (•, *, -) and numbered/lettered lists (e.g., 1., a.).
+    - **Smarter Paragraph Handling**: Uses vertical spacing between text blocks to better identify and separate paragraphs.
+- **MDX Editor**: Edit the converted MDX content with a live code editor.
+- **MDX Preview**: Preview the rendered HTML output of the MDX content.
+- **Progress Indicator**: Visual feedback for the PDF processing and conversion steps.
+- **File Operations**:
+    - Save the generated MDX content to a `.mdx` file.
+    - Clear the uploaded PDF and its related state.
+    - Clear the MDX editor content.
+- **Error Messaging**: Displays informative error messages if the PDF conversion fails.
 
 ## Components
 
-### `FileUploader.js`
-Handles the file input for PDF upload and reads the file content.
+The application is built with Next.js and comprises several key React components:
 
-### `PdfViewer.js`
-Displays the uploaded PDF using `@react-pdf-viewer/core`.
+-   **`FileUploader.js`**: Handles PDF file input.
+-   **`PdfViewer.js`**: Displays the uploaded PDF using `@react-pdf-viewer/core`.
+-   **`MdxEditor.js`**: Provides a code editor for MDX content using `@uiw/react-codemirror`.
+-   **`MdxPreview.js`**: Renders MDX to HTML using `react-markdown` and `remark-gfm`.
+-   **`ProgressBar.js`**: Shows the conversion progress.
+-   **`pdfToMdxConverter.js` (in `src/utils`)**: The core logic for PDF parsing, element classification (headers, lists, paragraphs), and MDX generation.
+-   **`pages/index.js`**: The main page of the application, integrating all components and managing the application state and logic.
 
-### `MdxEditor.js`
-A rich text editor for MDX content, using `@uiw/react-codemirror`.
+## How to Use
 
-### `MdxPreview.js`
-Renders the MDX content to HTML using `react-markdown` and `remark-gfm`.
+1.  **Upload PDF**: Click the "Upload PDF" button and select a PDF file.
+2.  **View PDF**: The selected PDF will be displayed on the left panel.
+3.  **Convert**: Click the "Convert to MDX" button. The progress will be shown, and upon completion, the generated MDX will appear in the editor on the right.
+4.  **Edit MDX (Optional)**: Modify the MDX content in the editor.
+5.  **Preview MDX (Optional)**: Click "Preview MDX" to see the rendered HTML. Click "Hide Preview" to return to the editor.
+6.  **Save MDX**: Click "Save MDX" to download the content as a `.mdx` file.
+7.  **Clear**:
+    *   "Clear PDF": Removes the uploaded PDF and resets the PDF viewer and progress. MDX content remains.
+    *   "Clear Editor": Clears the content in the MDX editor and preview.
 
-### `ProgressBar.js`
-Displays the progress of the PDF to MDX conversion process.
+## Known Limitations
 
-### `pdfToMdxConverter.js`
-Contains utility functions for extracting text from PDF, classifying elements, and generating MDX content.
+While the converter aims to provide a good starting point, PDF conversion is inherently complex. Here are some known limitations:
 
-### `_app.js`
-Main entry point for the Next.js application.
+-   **No Table Conversion**: Tables in PDFs are not currently converted into Markdown tables or any structured format. They will likely be output as plain text.
+-   **No Image Extraction**: Images and other graphical elements from the PDF are not extracted or included in the MDX output.
+-   **Complex Layouts**: PDFs with multi-column layouts, intricate designs, or non-standard text flow may not be converted perfectly. The output might require significant manual cleanup.
+-   **Rich Text Formatting**: Preservation of inline rich text formatting (like bold, italics, underline, specific colors, or font styles within a single text block) is generally not supported. The conversion focuses on structural elements.
+-   **List Nesting**: Nested lists (sub-lists) are not currently supported. All detected list items will be rendered at the top level of the list.
+-   **Font-Based Styling**: The converter relies heavily on font sizes for header detection. PDFs that use unconventional font styling for headers might lead to incorrect classification.
+-   **Character Encoding**: While generally robust, some PDFs with unusual character encodings might produce garbled text.
+-   **No Links**: Hyperlinks within the PDF are not preserved in the MDX output.
 
-### `index.js`
-Main page of the application, integrates all components and handles the application logic.
+## Development
 
-## Installation
+### Prerequisites
+- Node.js (v18.x or later recommended)
+- npm or yarn
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/pdf-to-mdx-converter.git
-   ```
+### Installation & Setup
 
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/yourusername/pdf-to-mdx-converter.git 
+    cd pdf-to-mdx-converter
+    ```
+    *(Replace `yourusername` with the actual repository path if forked/different)*
 
-2. Ensure Dependencies are Installed
-Make sure you have installed all the necessary dependencies. If not, run the following command:
+2.  Install dependencies:
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
+3.  Start the development server:
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
+    The application will typically be available at `http://localhost:3000`.
+
+### Testing
+
+The project includes unit tests for the core conversion logic. To run the tests:
+
+```bash
+npm test
+# or
+yarn test
 ```
-npm install
-```
-
-3. Start the Development Server
-Once the dependencies are installed, you can start the development server using the following command:
-
-```
-npm run dev
-```
-
-4. Open Your Browser
-After running the above command, open your browser and navigate to:
-
-```
-http://localhost:3000
-```
+This will execute Jest tests located in the `src/utils/__tests__` directory.
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+
+This project is licensed under the MIT License - see the `LICENSE` file for details.

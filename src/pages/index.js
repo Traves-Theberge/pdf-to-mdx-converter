@@ -17,6 +17,7 @@ const HomePage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [conversionError, setConversionError] = useState(null); // Added for error messaging
   const fileInputRef = useRef(null);
 
   const handlePdfUpload = (file, fileName) => {
@@ -29,14 +30,17 @@ const HomePage = () => {
 
     setIsProcessing(true);
     setProgress(0);
+    setConversionError(null); // Clear previous errors
 
     try {
       const content = await convertPdfToMdx(pdfFile, setProgress);
       setMdxContent(content);
       setShowPreview(false); // Ensure preview is closed
+      setConversionError(null); // Clear error on success
     } catch (error) {
       console.error('Error processing PDF:', error);
-      alert('An error occurred while processing the PDF. Please try again.');
+      // alert('An error occurred while processing the PDF. Please try again.');
+      setConversionError(`An error occurred while processing the PDF. Details: ${error.message || 'Unknown error'}`);
     } finally {
       setIsProcessing(false);
     }
@@ -58,10 +62,10 @@ const HomePage = () => {
   const handleClearPdf = () => {
     setPdfFile(null);
     setPdfFileName('');
-    setMdxContent('');
-    setShowPreview(false);
+    // Do not clear mdxContent or showPreview here
     setProgress(0);
     setIsProcessing(false);
+    setConversionError(null); // Clear any conversion errors
     if (fileInputRef.current) {
       fileInputRef.current.value = ''; // Reset the file input element
     }
@@ -115,6 +119,7 @@ const HomePage = () => {
         <div className="w-1/3 p-4 overflow-auto">
           {pdfFile ? <PdfViewer pdfUrl={pdfFile} /> : <p>Please upload a PDF file</p>}
           {isProcessing && <ProgressBar progress={progress} />}
+          {conversionError && <p className="text-red-500 mt-2">{conversionError}</p>}
         </div>
         <div className="w-2/3 p-4 flex flex-col overflow-auto">
           {showPreview ? (
