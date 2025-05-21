@@ -20,6 +20,7 @@ The conversion process attempts to identify structural elements like headers, pa
     - **Improved Header Detection**: Identifies H1, H2, and H3 headers based on font size variations.
     - **Expanded List Item Support**: Recognizes various bullet point styles (•, *, -) and numbered/lettered lists (e.g., 1., a.).
     - **Smarter Paragraph Handling**: Uses vertical spacing between text blocks to better identify and separate paragraphs.
+    - **Nested List Support**: Handles hierarchically indented lists based on x-coordinates of list items.
 - **MDX Editor**: Edit the converted MDX content with a live code editor.
 - **MDX Preview**: Preview the rendered HTML output of the MDX content.
 - **Progress Indicator**: Visual feedback for the PDF processing and conversion steps.
@@ -61,10 +62,18 @@ While the converter aims to provide a good starting point, PDF conversion is inh
 -   **No Image Extraction**: Images and other graphical elements from the PDF are not extracted or included in the MDX output.
 -   **Complex Layouts**: PDFs with multi-column layouts, intricate designs, or non-standard text flow may not be converted perfectly. The output might require significant manual cleanup.
 -   **Rich Text Formatting**: Preservation of inline rich text formatting (like bold, italics, underline, specific colors, or font styles within a single text block) is generally not supported. The conversion focuses on structural elements.
--   **List Nesting**: Nested lists (sub-lists) are not currently supported. All detected list items will be rendered at the top level of the list.
 -   **Font-Based Styling**: The converter relies heavily on font sizes for header detection. PDFs that use unconventional font styling for headers might lead to incorrect classification.
 -   **Character Encoding**: While generally robust, some PDFs with unusual character encodings might produce garbled text.
 -   **No Links**: Hyperlinks within the PDF are not preserved in the MDX output.
+
+## Development Notes
+
+During recent development iterations, attempts were made to implement the following features:
+
+-   **Hyperlink Preservation**: Extracting hyperlink information from PDF annotations and embedding them in the MDX.
+-   **Basic Image Extraction**: Extracting images from PDFs, converting them to base64, and embedding them as data URLs in the MDX.
+
+Unfortunately, due to persistent technical difficulties and tooling issues within the development environment that prevented the successful application and testing of the implemented code, these features are **not currently functional** in this version of the application. Further work is required to integrate them.
 
 ## Development
 
