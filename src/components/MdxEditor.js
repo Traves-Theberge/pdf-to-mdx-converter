@@ -3,6 +3,9 @@ import dynamic from 'next/dynamic';
 import { useTheme } from 'next-themes';
 import { githubDark, githubLight } from '@uiw/codemirror-theme-github';
 import { markdown } from '@codemirror/lang-markdown';
+import { indentWithTab } from '@codemirror/commands';
+import { EditorView } from '@codemirror/view';
+import { keymap } from '@codemirror/view';
 
 const CodeMirror = dynamic(
   () => import('@uiw/react-codemirror').then((mod) => mod.default),
@@ -18,9 +21,34 @@ const MdxEditor = ({ mdxContent, setMdxContent }) => {
         value={mdxContent}
         height="100%"
         theme={theme === 'dark' ? githubDark : githubLight}
-        extensions={[markdown()]}
+        extensions={[
+          markdown(),
+          EditorView.lineWrapping,
+          keymap.of([indentWithTab]),
+          EditorView.theme({
+            '&': {
+              fontSize: '14px',
+              height: '100%',
+            },
+            '.cm-gutters': {
+              backgroundColor: 'transparent',
+              border: 'none',
+            },
+            '.cm-activeLineGutter': {
+              backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
+            },
+            '.cm-activeLine': {
+              backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
+            },
+            '.cm-line': {
+              padding: '4px 0',
+            },
+            '&.cm-focused': {
+              outline: 'none',
+            },
+          }),
+        ]}
         onChange={(value) => setMdxContent(value)}
-        className="text-sm"
         basicSetup={{
           lineNumbers: true,
           highlightActiveLineGutter: true,
