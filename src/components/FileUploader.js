@@ -24,7 +24,7 @@ const FileUploader = ({ onPdfUpload, fileInputRef }) => {
         ref={fileInputRef}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
       />
-      <Button variant="outline">
+      <Button variant="outline" className="font-medium">
         Choose PDF file
       </Button>
     </div>

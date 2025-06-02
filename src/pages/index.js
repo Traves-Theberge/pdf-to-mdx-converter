@@ -28,10 +28,8 @@ const HomePage = () => {
 
   const handleConvert = async () => {
     if (!pdfFile) return;
-
     setIsProcessing(true);
     setProgress(0);
-
     try {
       const content = await convertPdfToMdx(pdfFile, setProgress);
       setMdxContent(content);
@@ -75,18 +73,21 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container py-6">
+      <header className="border-b bg-card">
+        <div className="container py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">PDF to MDX Converter</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight">PDF to MDX</h1>
+              <span className="text-sm text-muted-foreground">Converter</span>
+            </div>
             <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <main className="container py-6 animate-in fade-in duration-500">
-        <Card className="mb-6">
-          <CardContent className="pt-6">
+      <main className="container py-8 space-y-8 animate-in fade-in duration-500">
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
             <div className="flex flex-wrap gap-4 items-center justify-between">
               <div className="flex items-center gap-4">
                 <FileUploader onPdfUpload={handlePdfUpload} fileInputRef={fileInputRef} />
@@ -94,6 +95,7 @@ const HomePage = () => {
                   variant="outline"
                   onClick={handleClearPdf}
                   disabled={!pdfFile && !mdxContent}
+                  className="transition-colors"
                 >
                   Clear All
                 </Button>
@@ -102,7 +104,7 @@ const HomePage = () => {
                 <Button
                   onClick={handleConvert}
                   disabled={!pdfFile || isProcessing}
-                  className="relative overflow-hidden"
+                  className="relative overflow-hidden font-medium"
                 >
                   {isProcessing ? 'Converting...' : 'Convert to MDX'}
                   {isProcessing && (
@@ -113,6 +115,7 @@ const HomePage = () => {
                   variant="secondary"
                   onClick={handleTogglePreview}
                   disabled={!mdxContent}
+                  className="font-medium"
                 >
                   {showPreview ? 'Edit MDX' : 'Preview MDX'}
                 </Button>
@@ -120,6 +123,7 @@ const HomePage = () => {
                   variant="outline"
                   onClick={handleSaveMdx}
                   disabled={!mdxContent}
+                  className="font-medium"
                 >
                   Save MDX
                 </Button>
@@ -127,6 +131,7 @@ const HomePage = () => {
                   variant="destructive"
                   onClick={handleClearEditor}
                   disabled={!mdxContent}
+                  className="font-medium"
                 >
                   Clear Editor
                 </Button>
@@ -137,16 +142,19 @@ const HomePage = () => {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="min-h-[600px] transition-shadow hover:shadow-lg">
-            <CardHeader>
-              <CardTitle>PDF Preview</CardTitle>
+          <Card className="min-h-[600px] transition-all duration-200 hover:shadow-lg">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-xl font-semibold">PDF Preview</CardTitle>
+              {pdfFileName && (
+                <p className="text-sm text-muted-foreground">{pdfFileName}</p>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="h-[calc(100%-2rem)] overflow-auto">
+              <div className="h-[calc(100%-2rem)] overflow-auto rounded-lg">
                 {pdfFile ? (
                   <PdfViewer pdfUrl={pdfFile} />
                 ) : (
-                  <div className="flex items-center justify-center h-full bg-muted rounded-lg border-2 border-dashed">
+                  <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg border-2 border-dashed">
                     <p className="text-muted-foreground">Upload a PDF file to begin</p>
                   </div>
                 )}
@@ -154,14 +162,19 @@ const HomePage = () => {
             </CardContent>
           </Card>
 
-          <Card className="min-h-[600px] transition-shadow hover:shadow-lg">
-            <CardHeader>
-              <CardTitle>{showPreview ? 'MDX Preview' : 'MDX Editor'}</CardTitle>
+          <Card className="min-h-[600px] transition-all duration-200 hover:shadow-lg">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-xl font-semibold">
+                {showPreview ? 'MDX Preview' : 'MDX Editor'}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {showPreview ? 'Preview your MDX content' : 'Edit your MDX content'}
+              </p>
             </CardHeader>
             <CardContent>
               <div className="h-[calc(100%-2rem)]">
                 {showPreview ? (
-                  <div className="h-full overflow-auto bg-muted rounded-lg p-4">
+                  <div className="h-full overflow-auto bg-muted/50 rounded-lg p-6">
                     <MdxPreview content={mdxContent} />
                   </div>
                 ) : (
