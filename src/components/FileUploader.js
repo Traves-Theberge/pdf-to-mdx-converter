@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
@@ -7,12 +7,10 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 
 const FileUploader = ({ onPdfUpload, fileInputRef }) => {
-  const [isDragging, setIsDragging] = useState(false);
-
-  const onDrop = (acceptedFiles) => {
+  const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     if (file && file.type === 'application/pdf') {
       const reader = new FileReader();
@@ -20,10 +18,8 @@ const FileUploader = ({ onPdfUpload, fileInputRef }) => {
         onPdfUpload(e.target.result, file.name);
       };
       reader.readAsDataURL(file);
-    } else {
-      alert('Please upload a valid PDF file');
     }
-  };
+  }, [onPdfUpload]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -31,51 +27,58 @@ const FileUploader = ({ onPdfUpload, fileInputRef }) => {
       'application/pdf': ['.pdf']
     },
     multiple: false,
-    onDragEnter: () => setIsDragging(true),
-    onDragLeave: () => setIsDragging(false),
-    onDropAccepted: () => setIsDragging(false),
-    onDropRejected: () => setIsDragging(false),
+    noClick: true,
   });
 
+  const handleButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
-    <div className="relative">
+    <div {...getRootProps()} className="relative">
       <AnimatePresence>
-        {(isDragActive || isDragging) && (
+        {isDragActive && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 -m-4 rounded-lg border-2 border-primary border-dashed bg-primary/5 z-50 pointer-events-none"
+            className="absolute inset-0 -m-4 rounded-lg border-2 border-primary border-dashed bg-primary/5 z-50"
           />
         )}
       </AnimatePresence>
-      <div {...getRootProps()} className="relative">
-        <input {...getInputProps()} ref={fileInputRef} />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="font-medium gap-2 relative overflow-hidden"
-              type="button"
-            >
-              <Upload size={16} className="text-muted-foreground" />
-              Choose PDF file
-              {(isDragActive || isDragging) && (
-                <motion.div
-                  className="absolute inset-0 bg-primary/10"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Click to browse or drag and drop a PDF</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+      
+      <input 
+        {...getInputProps()} 
+        ref={fileInputRef}
+        className="hidden"
+      />
+      
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleButtonClick}
+            className="relative font-medium gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            Choose PDF file
+            {isDragActive && (
+              <motion.div
+                className="absolute inset-0 bg-primary/10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Click to browse or drag and drop a PDF</p>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 };
