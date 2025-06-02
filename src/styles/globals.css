@@ -59,5 +59,6 @@
 }
 
 .pdf-viewer {
-  @apply h-full w-full overflow-hidden rounded-lg border;
+  @apply h-full w-full overflow-hidden rounded-lg border relative;
+  min-height: 600px;
 }
