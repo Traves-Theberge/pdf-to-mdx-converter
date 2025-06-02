@@ -1,16 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import 'pdfjs-dist/build/pdf.worker.entry';
 
-const DEBUG = true;
-
-const log = (message, data = null) => {
-  if (DEBUG) {
-    console.log(`[PDF-MDX] ${message}`, data || '');
-  }
-};
-
 const extractLayoutInfo = async (page, pageNumber) => {
-  log(`Extracting layout info from page ${pageNumber}`);
   try {
     const textContent = await page.getTextContent();
     const viewport = page.getViewport({ scale: 1 });
@@ -21,21 +12,20 @@ const extractLayoutInfo = async (page, pageNumber) => {
         text: item.str,
         x: item.transform[4],
         y: viewport.height - item.transform[5],
-        width: item.width,
-        height: item.height,
+        width: item.width || 0,
+        height: item.height || 0,
         fontSize: fontSizeScale,
-        fontName: item.fontName,
+        fontName: item.fontName || '',
         fontWeight: item.fontWeight || 'normal',
         isItalic: item.fontName?.toLowerCase().includes('italic'),
         isBold: item.fontName?.toLowerCase().includes('bold') || (item.fontWeight && item.fontWeight >= 700),
         pageNumber,
-        style: item.fontName?.toLowerCase().includes('italic') ? 'italic' : 
-               item.fontName?.toLowerCase().includes('bold') ? 'bold' : 'normal'
+        transform: item.transform,
       };
     });
   } catch (error) {
-    log(`Error in extractLayoutInfo for page ${pageNumber}:`, error);
-    throw error;
+    console.error(`Error extracting layout from page ${pageNumber}:`, error);
+    return [];
   }
 };
 
@@ -58,9 +48,10 @@ const classifyElements = (layout) => {
   const lines = [];
   let currentLine = [];
   let prevY = null;
+  let prevPageNumber = null;
   const LINE_HEIGHT_THRESHOLD = 5;
 
-  // Sort by page number first, then by position
+  // Sort by page number first, then by vertical position, then horizontal
   layout.sort((a, b) => {
     if (a.pageNumber !== b.pageNumber) {
       return a.pageNumber - b.pageNumber;
@@ -70,16 +61,20 @@ const classifyElements = (layout) => {
   });
 
   layout.forEach(item => {
-    if (prevY === null || 
-        (item.pageNumber === currentLine[0]?.pageNumber && Math.abs(item.y - prevY) < LINE_HEIGHT_THRESHOLD)) {
-      currentLine.push(item);
-    } else {
+    if (prevPageNumber !== item.pageNumber) {
       if (currentLine.length > 0) {
         lines.push([...currentLine]);
       }
       currentLine = [item];
+      prevY = item.y;
+      prevPageNumber = item.pageNumber;
+    } else if (prevY === null || Math.abs(item.y - prevY) < LINE_HEIGHT_THRESHOLD) {
+      currentLine.push(item);
+    } else {
+      lines.push([...currentLine]);
+      currentLine = [item];
+      prevY = item.y;
     }
-    prevY = item.y;
   });
 
   if (currentLine.length > 0) {
@@ -127,7 +122,7 @@ const formatContent = (elements) => {
     const nextElement = elements[index + 1];
     const indent = '  '.repeat(element.indentLevel);
 
-    // Handle page breaks
+    // Add page breaks between pages
     if (element.pageNumber !== currentPage) {
       if (currentPage !== null) {
         mdx += '\n\n---\n\n';
@@ -211,7 +206,6 @@ export const convertPdfToMdx = async (pdfFile, setProgress) => {
       .replace(/\n{3,}/g, '\n\n')
       .replace(/\*\*\s*\*\*/g, '')
       .replace(/\*\s*\*/g, '')
-      .replace(/^\s+|\s+$/gm, '')
       .trim();
   } catch (error) {
     console.error('Error converting PDF to MDX:', error);
