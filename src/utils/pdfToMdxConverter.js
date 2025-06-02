@@ -1,5 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
-import 'pdfjs-dist/build/pdf.worker.entry';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 const extractLayoutInfo = async (page, pageNumber) => {
   try {
@@ -71,7 +72,9 @@ const classifyElements = (layout) => {
     } else if (prevY === null || Math.abs(item.y - prevY) < LINE_HEIGHT_THRESHOLD) {
       currentLine.push(item);
     } else {
-      lines.push([...currentLine]);
+      if (currentLine.length > 0) {
+        lines.push([...currentLine]);
+      }
       currentLine = [item];
       prevY = item.y;
     }
@@ -183,7 +186,12 @@ const formatContent = (elements) => {
 
 export const convertPdfToMdx = async (pdfFile, setProgress) => {
   try {
-    const loadingTask = pdfjsLib.getDocument(pdfFile);
+    const loadingTask = pdfjsLib.getDocument({
+      url: pdfFile,
+      cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+      cMapPacked: true,
+    });
+    
     const pdf = await loadingTask.promise;
     let allElements = [];
 
