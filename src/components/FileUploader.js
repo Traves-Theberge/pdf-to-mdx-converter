@@ -1,9 +1,11 @@
 import React from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
+import { Upload } from 'lucide-react';
 
 const FileUploader = ({ onPdfUpload, fileInputRef }) => {
-  const handlePdfChange = (event) => {
-    const file = event.target.files[0];
+  const onDrop = (acceptedFiles) => {
+    const file = acceptedFiles[0];
     if (file && file.type === 'application/pdf') {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -15,18 +17,26 @@ const FileUploader = ({ onPdfUpload, fileInputRef }) => {
     }
   };
 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'application/pdf': ['.pdf'] },
+    multiple: false,
+  });
+
   return (
     <div className="relative">
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={handlePdfChange}
-        ref={fileInputRef}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-      />
-      <Button variant="outline" className="font-medium">
-        Choose PDF file
-      </Button>
+      <div
+        {...getRootProps()}
+        className={`relative cursor-pointer transition-colors ${
+          isDragActive ? 'opacity-70' : ''
+        }`}
+      >
+        <input {...getInputProps({ ref: fileInputRef })} />
+        <Button variant="outline" className="font-medium gap-2">
+          <Upload size={16} />
+          Choose PDF file
+        </Button>
+      </div>
     </div>
   );
 };
