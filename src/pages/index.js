@@ -10,7 +10,10 @@ import { saveAs } from 'file-saver';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import FadeIn from '@/components/animations/FadeIn';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
+import { Save, FileX, Eye, Edit, RefreshCw } from 'lucide-react';
 
 const HomePage = () => {
   const [pdfFile, setPdfFile] = useState(null);
@@ -96,126 +99,165 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container py-4">
-          <div className="flex items-center justify-between header-content">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">PDF to MDX</h1>
-              <span className="text-sm text-muted-foreground">Converter</span>
-            </div>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
-
-      <main className="container py-8 space-y-8" ref={mainRef}>
-        <FadeIn delay={0.2}>
-          <Card className="overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex flex-wrap gap-4 items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <FileUploader onPdfUpload={handlePdfUpload} fileInputRef={fileInputRef} />
-                  <Button
-                    variant="outline"
-                    onClick={handleClearPdf}
-                    disabled={!pdfFile && !mdxContent}
-                    className="transition-colors"
-                  >
-                    Clear All
-                  </Button>
-                </div>
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleConvert}
-                    disabled={!pdfFile || isProcessing}
-                    className="relative overflow-hidden font-medium"
-                  >
-                    {isProcessing ? 'Converting...' : 'Convert to MDX'}
-                    {isProcessing && (
-                      <span className="absolute inset-0 bg-white/20 animate-pulse" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={handleTogglePreview}
-                    disabled={!mdxContent}
-                    className="font-medium"
-                  >
-                    {showPreview ? 'Edit MDX' : 'Preview MDX'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleSaveMdx}
-                    disabled={!mdxContent}
-                    className="font-medium"
-                  >
-                    Save MDX
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleClearEditor}
-                    disabled={!mdxContent}
-                    className="font-medium"
-                  >
-                    Clear Editor
-                  </Button>
-                </div>
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card">
+          <div className="container py-4">
+            <div className="flex items-center justify-between header-content">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-tight">PDF to MDX</h1>
+                <span className="text-sm text-muted-foreground">Converter</span>
               </div>
-              {isProcessing && <ProgressBar progress={progress} />}
-            </CardContent>
-          </Card>
-        </FadeIn>
+              <ThemeToggle />
+            </div>
+          </div>
+        </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <FadeIn delay={0.4}>
-            <Card className="min-h-[600px] transition-all duration-200 hover:shadow-lg">
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-xl font-semibold">PDF Preview</CardTitle>
-                {pdfFileName && (
-                  <p className="text-sm text-muted-foreground upload-feedback">{pdfFileName}</p>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="h-[calc(100%-2rem)] overflow-auto rounded-lg">
-                  {pdfFile ? (
-                    <PdfViewer pdfUrl={pdfFile} />
-                  ) : (
-                    <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg border-2 border-dashed">
-                      <p className="text-muted-foreground">Upload a PDF file to begin</p>
-                    </div>
-                  )}
+        <main className="container py-8 space-y-8" ref={mainRef}>
+          <FadeIn delay={0.2}>
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex flex-wrap gap-4 items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <FileUploader onPdfUpload={handlePdfUpload} fileInputRef={fileInputRef} />
+                    <Button
+                      variant="outline"
+                      onClick={handleClearPdf}
+                      disabled={!pdfFile && !mdxContent}
+                      className="transition-colors gap-2"
+                    >
+                      <FileX size={16} className="text-muted-foreground" />
+                      Clear All
+                    </Button>
+                  </div>
+                  <div className="flex gap-3">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={isProcessing ? 'processing' : 'convert'}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                      >
+                        <Button
+                          onClick={handleConvert}
+                          disabled={!pdfFile || isProcessing}
+                          className="relative overflow-hidden font-medium gap-2"
+                        >
+                          {isProcessing ? (
+                            <RefreshCw size={16} className="animate-spin" />
+                          ) : null}
+                          {isProcessing ? 'Converting...' : 'Convert to MDX'}
+                        </Button>
+                      </motion.div>
+                    </AnimatePresence>
+                    <Button
+                      variant="secondary"
+                      onClick={handleTogglePreview}
+                      disabled={!mdxContent}
+                      className="font-medium gap-2"
+                    >
+                      {showPreview ? (
+                        <>
+                          <Edit size={16} />
+                          Edit MDX
+                        </>
+                      ) : (
+                        <>
+                          <Eye size={16} />
+                          Preview
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleSaveMdx}
+                      disabled={!mdxContent}
+                      className="font-medium gap-2"
+                    >
+                      <Save size={16} className="text-muted-foreground" />
+                      Save MDX
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleClearEditor}
+                      disabled={!mdxContent}
+                      className="font-medium gap-2"
+                    >
+                      <FileX size={16} />
+                      Clear Editor
+                    </Button>
+                  </div>
                 </div>
+                {isProcessing && <ProgressBar progress={progress} />}
               </CardContent>
             </Card>
           </FadeIn>
 
-          <FadeIn delay={0.6}>
-            <Card className="min-h-[600px] transition-all duration-200 hover:shadow-lg">
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-xl font-semibold conversion-complete">
-                  {showPreview ? 'MDX Preview' : 'MDX Editor'}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {showPreview ? 'Preview your MDX content' : 'Edit your MDX content'}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[calc(100%-2rem)]">
-                  {showPreview ? (
-                    <div className="h-full overflow-auto bg-muted/50 rounded-lg p-6">
-                      <MdxPreview content={mdxContent} />
-                    </div>
-                  ) : (
-                    <MdxEditor mdxContent={mdxContent} setMdxContent={setMdxContent} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FadeIn delay={0.4}>
+              <Card className="min-h-[600px] transition-all duration-200 hover:shadow-lg">
+                <CardHeader className="space-y-1">
+                  <CardTitle className="text-xl font-semibold">PDF Preview</CardTitle>
+                  {pdfFileName && (
+                    <p className="text-sm text-muted-foreground upload-feedback">{pdfFileName}</p>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </FadeIn>
-        </div>
-      </main>
-    </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[calc(100%-2rem)] overflow-auto rounded-lg">
+                    {pdfFile ? (
+                      <PdfViewer pdfUrl={pdfFile} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg border-2 border-dashed">
+                        <p className="text-muted-foreground">Upload a PDF file to begin</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </FadeIn>
+
+            <FadeIn delay={0.6}>
+              <Card className="min-h-[600px] transition-all duration-200 hover:shadow-lg">
+                <CardHeader className="space-y-1">
+                  <CardTitle className="text-xl font-semibold conversion-complete">
+                    {showPreview ? 'MDX Preview' : 'MDX Editor'}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {showPreview ? 'Preview your MDX content' : 'Edit your MDX content'}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[calc(100%-2rem)]">
+                    <AnimatePresence mode="wait">
+                      {showPreview ? (
+                        <motion.div
+                          key="preview"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="h-full overflow-auto bg-muted/50 rounded-lg p-6"
+                        >
+                          <MdxPreview content={mdxContent} />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="editor"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                        >
+                          <MdxEditor mdxContent={mdxContent} setMdxContent={setMdxContent} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </CardContent>
+              </Card>
+            </FadeIn>
+          </div>
+        </main>
+      </div>
+    </TooltipProvider>
   );
 };
 
