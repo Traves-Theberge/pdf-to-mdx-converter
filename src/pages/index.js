@@ -1,6 +1,3 @@
-// src/pages/index.js
-"use client";
-
 import { useState, useRef } from 'react';
 import PdfViewer from '../components/PdfViewer';
 import MdxEditor from '../components/MdxEditor';
@@ -22,6 +19,8 @@ const HomePage = () => {
   const handlePdfUpload = (file, fileName) => {
     setPdfFile(file);
     setPdfFileName(fileName);
+    setMdxContent(''); // Clear previous content
+    setProgress(0);
   };
 
   const handleConvert = async () => {
@@ -33,7 +32,7 @@ const HomePage = () => {
     try {
       const content = await convertPdfToMdx(pdfFile, setProgress);
       setMdxContent(content);
-      setShowPreview(false); // Ensure preview is closed
+      setShowPreview(false);
     } catch (error) {
       console.error('Error processing PDF:', error);
       alert('An error occurred while processing the PDF. Please try again.');
@@ -52,78 +51,128 @@ const HomePage = () => {
   };
 
   const handleClearEditor = () => {
-    setMdxContent('');
+    if (confirm('Are you sure you want to clear the editor content?')) {
+      setMdxContent('');
+    }
   };
 
   const handleClearPdf = () => {
-    setPdfFile(null);
-    setPdfFileName('');
-    setMdxContent('');
-    setShowPreview(false);
-    setProgress(0);
-    setIsProcessing(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''; // Reset the file input element
+    if (confirm('Are you sure you want to clear all content?')) {
+      setPdfFile(null);
+      setPdfFileName('');
+      setMdxContent('');
+      setShowPreview(false);
+      setProgress(0);
+      setIsProcessing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="p-4 flex justify-between items-center">
-        <div className="flex items-center">
-          <FileUploader onPdfUpload={handlePdfUpload} fileInputRef={fileInputRef} />
-          <button
-            onClick={handleClearPdf}
-            className="ml-2 px-4 py-2 bg-gray-500 text-white rounded"
-            disabled={!pdfFile && !mdxContent}
-          >
-            Clear PDF
-          </button>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-bold text-gray-900">PDF to MDX Converter</h1>
         </div>
-        <div>
-          <button
-            onClick={handleConvert}
-            className="mr-2 px-4 py-2 bg-blue-500 text-white rounded"
-            disabled={!pdfFile || isProcessing}
-          >
-            {isProcessing ? 'Processing...' : 'Convert to MDX'}
-          </button>
-          <button
-            onClick={handleTogglePreview}
-            className="mr-2 px-4 py-2 bg-yellow-500 text-white rounded"
-            disabled={!mdxContent}
-          >
-            {showPreview ? 'Hide Preview' : 'Preview MDX'}
-          </button>
-          <button
-            onClick={handleSaveMdx}
-            className="mr-2 px-4 py-2 bg-green-500 text-white rounded"
-            disabled={!mdxContent}
-          >
-            Save MDX
-          </button>
-          <button
-            onClick={handleClearEditor}
-            className="px-4 py-2 bg-red-500 text-white rounded"
-            disabled={!mdxContent}
-          >
-            Clear Editor
-          </button>
+      </header>
+
+      <main className="flex-1 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <div className="flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex items-center gap-4">
+                <FileUploader onPdfUpload={handlePdfUpload} fileInputRef={fileInputRef} />
+                <button
+                  onClick={handleClearPdf}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  disabled={!pdfFile && !mdxContent}
+                >
+                  Clear All
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConvert}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
+                    isProcessing || !pdfFile
+                      ? 'bg-blue-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                  disabled={!pdfFile || isProcessing}
+                >
+                  {isProcessing ? 'Converting...' : 'Convert to MDX'}
+                </button>
+                <button
+                  onClick={handleTogglePreview}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    !mdxContent
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                  }`}
+                  disabled={!mdxContent}
+                >
+                  {showPreview ? 'Edit MDX' : 'Preview MDX'}
+                </button>
+                <button
+                  onClick={handleSaveMdx}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    !mdxContent
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}
+                  disabled={!mdxContent}
+                >
+                  Save MDX
+                </button>
+                <button
+                  onClick={handleClearEditor}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    !mdxContent
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-red-100 text-red-700 hover:bg-red-200'
+                  }`}
+                  disabled={!mdxContent}
+                >
+                  Clear Editor
+                </button>
+              </div>
+            </div>
+            {isProcessing && <ProgressBar progress={progress} />}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg shadow p-6 min-h-[600px]">
+              <h2 className="text-lg font-semibold mb-4">PDF Preview</h2>
+              <div className="h-[calc(100%-2rem)] overflow-auto">
+                {pdfFile ? (
+                  <PdfViewer pdfUrl={pdfFile} />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <p className="text-gray-500">Upload a PDF file to begin</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6 min-h-[600px]">
+              <h2 className="text-lg font-semibold mb-4">
+                {showPreview ? 'MDX Preview' : 'MDX Editor'}
+              </h2>
+              <div className="h-[calc(100%-2rem)]">
+                {showPreview ? (
+                  <div className="h-full overflow-auto bg-gray-50 rounded p-4">
+                    <MdxPreview content={mdxContent} />
+                  </div>
+                ) : (
+                  <MdxEditor mdxContent={mdxContent} setMdxContent={setMdxContent} />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="flex h-full">
-        <div className="w-1/3 p-4 overflow-auto">
-          {pdfFile ? <PdfViewer pdfUrl={pdfFile} /> : <p>Please upload a PDF file</p>}
-          {isProcessing && <ProgressBar progress={progress} />}
-        </div>
-        <div className="w-2/3 p-4 flex flex-col overflow-auto">
-          {showPreview ? (
-            <MdxPreview content={mdxContent} />
-          ) : (
-            <MdxEditor mdxContent={mdxContent} setMdxContent={setMdxContent} />
-          )}
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
