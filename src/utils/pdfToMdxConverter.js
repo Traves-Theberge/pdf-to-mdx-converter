@@ -10,7 +10,7 @@ const extractLayoutInfo = async (page) => {
   return textContent.items.map(item => ({
     text: item.str,
     x: item.transform[4],
-    y: viewport.height - item.transform[5],
+    y: item.transform[5], // Remove the viewport height subtraction to fix orientation
     width: item.width,
     height: item.height,
     fontName: item.fontName,
@@ -65,7 +65,7 @@ const classifyElements = (layout) => {
     if (yDiff < metrics.averageLineHeight / 2) {
       return a.x - b.x;
     }
-    return b.y - a.y;
+    return a.y - b.y; // Changed from b.y - a.y to a.y - b.y to fix orientation
   });
 
   // Group elements by line with precise positioning
