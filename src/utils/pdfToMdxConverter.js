@@ -39,7 +39,10 @@ const extractLayoutInfo = async (page, pageNumber) => {
         text: element.text.substring(0, 30),
         fontSize: element.fontSize,
         position: { x: element.x, y: element.y },
-        page: pageNumber
+        page: pageNumber,
+        fontName: element.fontName,
+        isBold: element.isBold,
+        isItalic: element.isItalic
       });
       
       return element;
@@ -135,6 +138,7 @@ const classifyElements = (layout) => {
     const firstItem = line[0];
     const indentLevel = Math.floor(firstItem.x / 20);
 
+    // Improved heading detection
     let type = 'paragraph';
     if (maxFontSize >= 24 || (maxFontSize >= 20 && line.every(item => item.isBold))) {
       type = 'h1';
@@ -146,8 +150,12 @@ const classifyElements = (layout) => {
       type = 'listItem';
     }
 
+    // Check if the line appears to be a code block
+    const isCode = line.every(item => item.fontName?.toLowerCase().includes('mono') || 
+                                    item.fontName?.toLowerCase().includes('courier'));
+
     const element = {
-      type,
+      type: isCode ? 'code' : type,
       content: text,
       fontSize: maxFontSize,
       x: firstItem.x,
@@ -155,6 +163,7 @@ const classifyElements = (layout) => {
       indentLevel,
       isBold: line.some(item => item.isBold),
       isItalic: line.some(item => item.isItalic),
+      isCode,
       pageNumber: firstItem.pageNumber
     };
 
@@ -162,7 +171,12 @@ const classifyElements = (layout) => {
       type: element.type,
       content: element.content.substring(0, 50),
       pageNumber: element.pageNumber,
-      fontSize: element.fontSize
+      fontSize: element.fontSize,
+      formatting: {
+        bold: element.isBold,
+        italic: element.isItalic,
+        code: element.isCode
+      }
     });
 
     return element;
@@ -175,6 +189,7 @@ const formatContent = (elements) => {
   let currentPage = null;
   let inList = false;
   let listIndentLevel = 0;
+  let inCodeBlock = false;
 
   elements.forEach((element, index) => {
     const nextElement = elements[index + 1];
@@ -183,14 +198,40 @@ const formatContent = (elements) => {
     // Add page breaks between pages
     if (element.pageNumber !== currentPage) {
       if (currentPage !== null) {
-        mdx += '\n\n---\n\n';
-        log(`Added page break between pages ${currentPage} and ${element.pageNumber}`);
+        if (inCodeBlock) {
+          mdx += '```\n\n';
+          inCodeBlock = false;
+        }
+        mdx += '\n---\n\n';
         inList = false;
       }
       currentPage = element.pageNumber;
     }
 
     let content = element.content;
+
+    // Handle code blocks
+    if (element.isCode) {
+      if (!inCodeBlock) {
+        if (inList) {
+          mdx += '\n';
+          inList = false;
+        }
+        mdx += '```\n';
+        inCodeBlock = true;
+      }
+      mdx += `${content}\n`;
+      if (!nextElement?.isCode) {
+        mdx += '```\n\n';
+        inCodeBlock = false;
+      }
+      return;
+    } else if (inCodeBlock) {
+      mdx += '```\n\n';
+      inCodeBlock = false;
+    }
+
+    // Apply text formatting
     if (element.isBold && element.isItalic) {
       content = `***${content}***`;
     } else if (element.isBold) {
@@ -238,7 +279,14 @@ const formatContent = (elements) => {
   });
 
   log('Completed content formatting');
-  return mdx.trim();
+  
+  // Clean up the final MDX content
+  return mdx
+    .replace(/\n{3,}/g, '\n\n') // Remove extra newlines
+    .replace(/\*\*\s*\*\*/g, '') // Remove empty bold
+    .replace(/\*\s*\*/g, '') // Remove empty italic
+    .replace(/```\s*```/g, '') // Remove empty code blocks
+    .trim();
 };
 
 export const convertPdfToMdx = async (pdfFile, setProgress) => {
@@ -274,15 +322,9 @@ export const convertPdfToMdx = async (pdfFile, setProgress) => {
     const classifiedElements = classifyElements(allElements);
     log(`Elements classified: ${classifiedElements.length}`);
     const mdxContent = formatContent(classifiedElements);
-
-    const cleanedContent = mdxContent
-      .replace(/\n{3,}/g, '\n\n')
-      .replace(/\*\*\s*\*\*/g, '')
-      .replace(/\*\s*\*/g, '')
-      .trim();
-
+    
     log('Conversion completed successfully');
-    return cleanedContent;
+    return mdxContent;
   } catch (error) {
     console.error('Error converting PDF to MDX:', error);
     log('Conversion failed', error);
