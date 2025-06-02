@@ -2,4 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles (if any) can be added here */
+@layer base {
+  body {
+    @apply bg-gray-50;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 text-sm font-medium rounded-md transition-all duration-150;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-gray-700 hover:bg-gray-50 border border-gray-300;
+  }
+
+  .btn-danger {
+    @apply bg-red-100 text-red-700 hover:bg-red-200 disabled:bg-gray-100 disabled:text-gray-400;
+  }
+
+  .btn-success {
+    @apply bg-green-100 text-green-700 hover:bg-green-200 disabled:bg-gray-100 disabled:text-gray-400;
+  }
+
+  .btn-warning {
+    @apply bg-yellow-100 text-yellow-700 hover:bg-yellow-200 disabled:bg-gray-100 disabled:text-gray-400;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-100;
+  }
+
+  .input-group {
+    @apply flex flex-col space-y-1;
+  }
+
+  .input-label {
+    @apply text-sm font-medium text-gray-700;
+  }
+
+  .input {
+    @apply px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+}

@@ -23,9 +23,9 @@ const FileUploader = ({ onPdfUpload, fileInputRef }) => {
         ref={fileInputRef}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
       />
-      <div className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 transition-colors">
-        <span className="text-sm font-medium text-gray-700">Choose PDF file</span>
-      </div>
+      <button className="btn btn-secondary">
+        Choose PDF file
+      </button>
     </div>
   );
 };
