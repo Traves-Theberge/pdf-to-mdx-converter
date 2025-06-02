@@ -14,6 +14,7 @@ const extractLayoutInfo = async (page) => {
   try {
     const textContent = await page.getTextContent();
     const viewport = page.getViewport({ scale: 1 });
+    const operatorList = await page.getOperatorList();
     
     log(`Found ${textContent.items.length} text items`);
     
@@ -138,7 +139,8 @@ const classifyElements = (layout) => {
       isBold: line.some(item => item.isBold),
       isItalic: line.some(item => item.isItalic),
       style: line.some(item => item.style === 'italic') ? 'italic' : 
-             line.some(item => item.style === 'bold') ? 'bold' : 'normal'
+             line.some(item => item.style === 'bold') ? 'bold' : 'normal',
+      pageNumber: firstItem.pageNumber
     };
 
     log('Classified element:', {
@@ -146,7 +148,8 @@ const classifyElements = (layout) => {
       content: element.content.substring(0, 50) + (element.content.length > 50 ? '...' : ''),
       fontSize: element.fontSize,
       style: element.style,
-      indentLevel: element.indentLevel
+      indentLevel: element.indentLevel,
+      page: element.pageNumber
     });
 
     return element;
@@ -159,11 +162,20 @@ const formatContent = (elements) => {
   let inList = false;
   let listIndentLevel = 0;
   let prevType = null;
+  let currentPage = null;
 
   elements.forEach((element, index) => {
     const prevElement = elements[index - 1];
     const nextElement = elements[index + 1];
     const indent = '  '.repeat(element.indentLevel);
+
+    // Add page breaks
+    if (element.pageNumber !== currentPage) {
+      if (currentPage !== null) {
+        mdx += '\n---\n\n';
+      }
+      currentPage = element.pageNumber;
+    }
 
     // Improved spacing logic
     if (prevElement) {
@@ -236,20 +248,25 @@ export const convertPdfToMdx = async (pdfFile, setProgress) => {
     const pdf = await loadingTask.promise;
     log(`PDF loaded successfully. Total pages: ${pdf.numPages}`);
     
-    let mdxContent = '';
-    let pageContents = [];
+    let allElements = [];
 
     for (let i = 1; i <= pdf.numPages; i++) {
       try {
         log(`Processing page ${i}`);
         const page = await pdf.getPage(i);
         const layout = await extractLayoutInfo(page);
+        
+        // Add page number to each element
+        layout.forEach(item => {
+          item.pageNumber = i;
+        });
+        
         log(`Extracted ${layout.length} elements from page ${i}`);
         
         const elements = classifyElements(layout);
         log(`Classified ${elements.length} elements on page ${i}`);
         
-        pageContents.push(formatContent(elements));
+        allElements = allElements.concat(elements);
         setProgress((i / pdf.numPages) * 100);
         log(`Completed page ${i}`);
       } catch (pageError) {
@@ -259,7 +276,7 @@ export const convertPdfToMdx = async (pdfFile, setProgress) => {
       }
     }
 
-    mdxContent = pageContents.join('\n\n');
+    const mdxContent = formatContent(allElements);
 
     log('Cleaning up MDX content');
     const cleanedContent = mdxContent
