@@ -14,7 +14,6 @@ const extractLayoutInfo = async (page) => {
   try {
     const textContent = await page.getTextContent();
     const viewport = page.getViewport({ scale: 1 });
-    const operatorList = await page.getOperatorList();
     
     log(`Found ${textContent.items.length} text items`);
     
@@ -30,14 +29,17 @@ const extractLayoutInfo = async (page) => {
         fontName: item.fontName,
         fontWeight: item.fontWeight || 'normal',
         isItalic: item.fontName?.toLowerCase().includes('italic'),
-        isBold: item.fontName?.toLowerCase().includes('bold') || fontSizeScale > 16,
+        isBold: item.fontName?.toLowerCase().includes('bold') || (item.fontWeight && item.fontWeight >= 700),
         transform: item.transform,
         spaceWidth: item.spaceWidth,
+        style: item.fontName?.toLowerCase().includes('italic') ? 'italic' : 
+               item.fontName?.toLowerCase().includes('bold') ? 'bold' : 'normal'
       };
       
       log('Processed text element:', {
         text: element.text,
         fontSize: element.fontSize,
+        style: element.style,
         position: { x: element.x, y: element.y }
       });
       
@@ -49,20 +51,31 @@ const extractLayoutInfo = async (page) => {
   }
 };
 
-const isListItem = (text) => {
-  const listMarkers = /^[•\-\*]\s|^\d+\.\s|^[a-z]\)\s|^[A-Z]\)\s/;
-  const isListItem = listMarkers.test(text.trim());
-  log('List item check:', { text, isListItem });
-  return isListItem;
+const isListItem = (text, x) => {
+  // Enhanced list marker detection
+  const bulletListMarkers = /^[•\-\*\u2022\u2023\u25E6\u2043\u2219]\s*/;
+  const numberedListMarkers = /^\d+[.)]\s*/;
+  const alphaListMarkers = /^[a-zA-Z][.)]\s*/;
+  const romanNumeralMarkers = /^[ivxIVX]+[.)]\s*/;
+  
+  const isIndented = x > 20;
+  const hasListMarker = bulletListMarkers.test(text) || 
+                       numberedListMarkers.test(text) || 
+                       alphaListMarkers.test(text) ||
+                       romanNumeralMarkers.test(text);
+  
+  log('List item check:', { text, x, isIndented, hasListMarker });
+  return hasListMarker || (isIndented && text.trim().length > 0);
 };
 
 const classifyElements = (layout) => {
   log('Starting element classification');
   
-  // Sort elements by vertical position (top to bottom) and then by horizontal position
+  // Sort elements by vertical position and then horizontal position
   layout.sort((a, b) => {
     const yDiff = Math.abs(a.y - b.y);
-    if (yDiff < 12) {
+    const LINE_HEIGHT_THRESHOLD = 5;
+    if (yDiff < LINE_HEIGHT_THRESHOLD) {
       return a.x - b.x;
     }
     return a.y - b.y;
@@ -70,13 +83,14 @@ const classifyElements = (layout) => {
 
   log('Sorted layout elements');
 
-  // Group elements into lines
+  // Group elements into lines with better line detection
   const lines = [];
   let currentLine = [];
   let prevY = null;
+  const LINE_MERGE_THRESHOLD = 8;
 
   layout.forEach(item => {
-    if (prevY === null || Math.abs(item.y - prevY) < 12) {
+    if (prevY === null || Math.abs(item.y - prevY) < LINE_MERGE_THRESHOLD) {
       currentLine.push(item);
     } else {
       if (currentLine.length > 0) {
@@ -94,22 +108,23 @@ const classifyElements = (layout) => {
 
   log(`Grouped elements into ${lines.length} lines`);
 
-  // Classify each line
+  // Classify each line with improved heading detection
   return lines.map(line => {
     const text = line.map(item => item.text).join(' ').trim();
     const maxFontSize = Math.max(...line.map(item => item.fontSize));
     const firstItem = line[0];
     const indentLevel = Math.floor(firstItem.x / 20);
+    const averageY = line.reduce((sum, item) => sum + item.y, 0) / line.length;
 
-    // Determine element type
+    // Improved element type determination
     let type = 'paragraph';
-    if (maxFontSize >= 24) {
+    if (maxFontSize >= 24 || (maxFontSize >= 20 && line.every(item => item.isBold))) {
       type = 'h1';
-    } else if (maxFontSize >= 20) {
+    } else if (maxFontSize >= 20 || (maxFontSize >= 16 && line.every(item => item.isBold))) {
       type = 'h2';
-    } else if (maxFontSize >= 16) {
+    } else if (maxFontSize >= 16 || (maxFontSize >= 14 && line.every(item => item.isBold))) {
       type = 'h3';
-    } else if (isListItem(text)) {
+    } else if (isListItem(text, firstItem.x)) {
       type = 'listItem';
     }
 
@@ -118,16 +133,19 @@ const classifyElements = (layout) => {
       content: text,
       fontSize: maxFontSize,
       x: firstItem.x,
-      y: firstItem.y,
+      y: averageY,
       indentLevel,
       isBold: line.some(item => item.isBold),
       isItalic: line.some(item => item.isItalic),
+      style: line.some(item => item.style === 'italic') ? 'italic' : 
+             line.some(item => item.style === 'bold') ? 'bold' : 'normal'
     };
 
     log('Classified element:', {
       type: element.type,
       content: element.content.substring(0, 50) + (element.content.length > 50 ? '...' : ''),
       fontSize: element.fontSize,
+      style: element.style,
       indentLevel: element.indentLevel
     });
 
@@ -139,65 +157,72 @@ const formatContent = (elements) => {
   log('Starting content formatting');
   let mdx = '';
   let inList = false;
-  let prevIndentLevel = 0;
+  let listIndentLevel = 0;
+  let prevType = null;
 
   elements.forEach((element, index) => {
     const prevElement = elements[index - 1];
     const nextElement = elements[index + 1];
     const indent = '  '.repeat(element.indentLevel);
 
-    // Add spacing between different sections
-    if (prevElement && 
-        (prevElement.type !== element.type || 
-         Math.abs(prevElement.y - element.y) > 20)) {
-      mdx += '\n';
-      log('Added section spacing');
+    // Improved spacing logic
+    if (prevElement) {
+      if (prevElement.type !== element.type || 
+          Math.abs(prevElement.y - element.y) > 20 ||
+          (prevElement.type === 'paragraph' && element.type === 'paragraph')) {
+        mdx += '\n';
+        log('Added section spacing');
+      }
     }
 
-    // Format the content based on type
-    let content = element.content;
-    if (element.isBold) {
+    // Enhanced content formatting
+    let content = element.content.trim();
+    
+    // Apply styling
+    if (element.isBold && element.isItalic) {
+      content = `***${content}***`;
+    } else if (element.isBold) {
       content = `**${content}**`;
-      log('Applied bold formatting');
-    }
-    if (element.isItalic) {
+    } else if (element.isItalic) {
       content = `*${content}*`;
-      log('Applied italic formatting');
     }
 
     switch (element.type) {
       case 'h1':
         mdx += `${indent}# ${content}\n\n`;
-        log('Formatted h1 heading');
+        inList = false;
         break;
       case 'h2':
         mdx += `${indent}## ${content}\n\n`;
-        log('Formatted h2 heading');
+        inList = false;
         break;
       case 'h3':
         mdx += `${indent}### ${content}\n\n`;
-        log('Formatted h3 heading');
+        inList = false;
         break;
       case 'listItem':
-        if (!inList || element.indentLevel !== prevIndentLevel) {
+        if (!inList || element.indentLevel !== listIndentLevel) {
           mdx += '\n';
-          log('Started new list');
         }
         mdx += `${indent}- ${content}\n`;
         inList = true;
-        prevIndentLevel = element.indentLevel;
+        listIndentLevel = element.indentLevel;
         if (!nextElement || nextElement.type !== 'listItem') {
           mdx += '\n';
           inList = false;
-          log('Ended list');
         }
         break;
       default:
-        if (content.trim()) {
+        if (content) {
+          if (inList) {
+            mdx += '\n';
+            inList = false;
+          }
           mdx += `${indent}${content}\n\n`;
-          log('Formatted paragraph');
         }
     }
+
+    prevType = element.type;
   });
 
   log('Completed content formatting');
@@ -212,6 +237,7 @@ export const convertPdfToMdx = async (pdfFile, setProgress) => {
     log(`PDF loaded successfully. Total pages: ${pdf.numPages}`);
     
     let mdxContent = '';
+    let pageContents = [];
 
     for (let i = 1; i <= pdf.numPages; i++) {
       try {
@@ -223,7 +249,7 @@ export const convertPdfToMdx = async (pdfFile, setProgress) => {
         const elements = classifyElements(layout);
         log(`Classified ${elements.length} elements on page ${i}`);
         
-        mdxContent += formatContent(elements) + '\n\n';
+        pageContents.push(formatContent(elements));
         setProgress((i / pdf.numPages) * 100);
         log(`Completed page ${i}`);
       } catch (pageError) {
@@ -233,11 +259,14 @@ export const convertPdfToMdx = async (pdfFile, setProgress) => {
       }
     }
 
+    mdxContent = pageContents.join('\n\n');
+
     log('Cleaning up MDX content');
     const cleanedContent = mdxContent
       .replace(/\n{3,}/g, '\n\n')
       .replace(/\*\*\s*\*\*/g, '')
       .replace(/\*\s*\*/g, '')
+      .replace(/^\s+|\s+$/gm, '')
       .trim();
 
     log('Conversion completed successfully');
