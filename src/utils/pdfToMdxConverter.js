@@ -35,10 +35,11 @@ const extractLayoutInfo = async (page, pageNumber) => {
         transform: item.transform,
       };
       
-      log(`Processed text element on page ${pageNumber}:`, {
+      log(`Processed text element:`, {
         text: element.text.substring(0, 30),
         fontSize: element.fontSize,
-        position: { x: element.x, y: element.y }
+        position: { x: element.x, y: element.y },
+        page: pageNumber
       });
       
       return element;
@@ -65,9 +66,7 @@ const isListItem = (text, x) => {
                        alphaListMarkers.test(text) ||
                        romanNumeralMarkers.test(text);
   
-  const result = hasListMarker || (isIndented && text.trim().length > 0);
-  log('List item check:', { text: text.substring(0, 30), x, isListItem: result });
-  return result;
+  return hasListMarker || (isIndented && text.trim().length > 0);
 };
 
 const classifyElements = (layout) => {
@@ -84,27 +83,29 @@ const classifyElements = (layout) => {
     if (a.pageNumber !== b.pageNumber) {
       return a.pageNumber - b.pageNumber;
     }
-    const yDiff = Math.abs(a.y - b.y);
-    return yDiff < LINE_HEIGHT_THRESHOLD ? a.x - b.x : a.y - b.y;
+    if (Math.abs(a.y - b.y) < LINE_HEIGHT_THRESHOLD) {
+      return a.x - b.x;
+    }
+    return b.y - a.y; // Reverse Y order to handle top-to-bottom
   });
 
   log('Sorted layout elements');
 
-  layout.forEach(item => {
-    if (prevPageNumber !== item.pageNumber) {
-      if (currentLine.length > 0) {
-        lines.push([...currentLine]);
-        log('Created new line at page break:', {
-          pageNumber: prevPageNumber,
-          text: currentLine.map(el => el.text).join(' ').substring(0, 50)
-        });
-      }
-      currentLine = [item];
-      prevY = item.y;
-      prevPageNumber = item.pageNumber;
-    } else if (prevY === null || Math.abs(item.y - prevY) < LINE_HEIGHT_THRESHOLD) {
-      currentLine.push(item);
-    } else {
+  for (let i = 0; i < layout.length; i++) {
+    const item = layout[i];
+    const nextItem = layout[i + 1];
+
+    // Start a new line if:
+    // 1. First item
+    // 2. New page
+    // 3. Significant Y difference
+    // 4. Last item
+    if (
+      prevPageNumber === null || // First item
+      item.pageNumber !== prevPageNumber || // New page
+      (prevY !== null && Math.abs(item.y - prevY) >= LINE_HEIGHT_THRESHOLD) || // Y difference
+      i === layout.length - 1 // Last item
+    ) {
       if (currentLine.length > 0) {
         lines.push([...currentLine]);
         log('Created new line:', {
@@ -113,12 +114,17 @@ const classifyElements = (layout) => {
         });
       }
       currentLine = [item];
-      prevY = item.y;
+      
+      // If this is the last item, push it as a line
+      if (i === layout.length - 1) {
+        lines.push([item]);
+      }
+    } else {
+      currentLine.push(item);
     }
-  });
 
-  if (currentLine.length > 0) {
-    lines.push(currentLine);
+    prevY = item.y;
+    prevPageNumber = item.pageNumber;
   }
 
   log(`Grouped elements into ${lines.length} lines`);
@@ -196,26 +202,21 @@ const formatContent = (elements) => {
     switch (element.type) {
       case 'h1':
         mdx += `${indent}# ${content}\n\n`;
-        log('Formatted h1:', { content: content.substring(0, 50) });
         inList = false;
         break;
       case 'h2':
         mdx += `${indent}## ${content}\n\n`;
-        log('Formatted h2:', { content: content.substring(0, 50) });
         inList = false;
         break;
       case 'h3':
         mdx += `${indent}### ${content}\n\n`;
-        log('Formatted h3:', { content: content.substring(0, 50) });
         inList = false;
         break;
       case 'listItem':
         if (!inList || element.indentLevel !== listIndentLevel) {
           mdx += '\n';
-          log('Starting new list');
         }
         mdx += `${indent}- ${content}\n`;
-        log('Formatted list item:', { content: content.substring(0, 50) });
         inList = true;
         listIndentLevel = element.indentLevel;
         if (!nextElement || 
@@ -223,7 +224,6 @@ const formatContent = (elements) => {
             nextElement.pageNumber !== element.pageNumber) {
           mdx += '\n';
           inList = false;
-          log('Ending list');
         }
         break;
       default:
@@ -233,7 +233,6 @@ const formatContent = (elements) => {
             inList = false;
           }
           mdx += `${indent}${content}\n\n`;
-          log('Formatted paragraph:', { content: content.substring(0, 50) });
         }
     }
   });
