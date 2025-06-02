@@ -13,46 +13,104 @@ const extractLayoutInfo = async (page) => {
     width: item.width,
     height: item.height,
     fontName: item.fontName,
-    fontSize: item.transform[0]
+    fontSize: item.transform[0],
+    fontWeight: item.fontWeight || 'normal',
+    isItalic: item.fontName?.toLowerCase().includes('italic'),
+    isBold: item.fontName?.toLowerCase().includes('bold')
   }));
 };
 
+const isListItem = (text, x) => {
+  const listMarkers = ['•', '-', '*', '○', '►', '⁃', '⁌', '⁍'];
+  const numberPattern = /^\d+\./;
+  
+  const trimmedText = text.trim();
+  return listMarkers.some(marker => trimmedText.startsWith(marker)) || 
+         numberPattern.test(trimmedText) ||
+         x > 40; // Indentation check for list items
+};
+
 const classifyElements = (layout) => {
-  return layout.map(item => {
-    if (item.fontSize > 16) return { ...item, type: 'header' };
-    if (item.text.trim().startsWith('•')) return { ...item, type: 'listItem' };
-    return { ...item, type: 'paragraph' };
+  let prevY = null;
+  let lineElements = [];
+  const classifiedLines = [];
+
+  // Sort elements by Y position (top to bottom) and X position (left to right)
+  layout.sort((a, b) => {
+    if (Math.abs(a.y - b.y) < 5) { // Elements on the same line
+      return a.x - b.x;
+    }
+    return b.y - a.y;
   });
+
+  // Group elements by line
+  layout.forEach(item => {
+    if (prevY === null || Math.abs(item.y - prevY) < 5) {
+      lineElements.push(item);
+    } else {
+      if (lineElements.length > 0) {
+        classifiedLines.push(processLine(lineElements));
+      }
+      lineElements = [item];
+    }
+    prevY = item.y;
+  });
+
+  if (lineElements.length > 0) {
+    classifiedLines.push(processLine(lineElements));
+  }
+
+  return classifiedLines;
+};
+
+const processLine = (elements) => {
+  const combinedText = elements.map(e => e.text).join(' ').trim();
+  const firstElement = elements[0];
+  const maxFontSize = Math.max(...elements.map(e => e.fontSize));
+
+  // Determine element type
+  let type = 'paragraph';
+  if (maxFontSize > 20) type = 'h1';
+  else if (maxFontSize > 16) type = 'h2';
+  else if (maxFontSize > 14) type = 'h3';
+  else if (isListItem(combinedText, firstElement.x)) type = 'listItem';
+
+  // Format text with markdown syntax
+  const formattedText = elements.reduce((text, element) => {
+    let formatted = element.text;
+    if (element.isBold) formatted = `**${formatted}**`;
+    if (element.isItalic) formatted = `*${formatted}*`;
+    return text + (text ? ' ' : '') + formatted;
+  }, '');
+
+  return {
+    type,
+    content: formattedText,
+    fontSize: maxFontSize,
+    x: firstElement.x,
+    y: firstElement.y
+  };
 };
 
 const generateStructuredContent = (classifiedElements) => {
-  const structure = [];
-  let currentParagraph = '';
+  let structure = [];
+  let currentList = null;
 
   classifiedElements.forEach(element => {
-    switch(element.type) {
-      case 'header':
-        if (currentParagraph) {
-          structure.push({ type: 'paragraph', content: currentParagraph.trim() });
-          currentParagraph = '';
-        }
-        structure.push({ type: 'header', content: element.text, level: Math.floor(24 / element.fontSize) });
-        break;
-      case 'listItem':
-        if (currentParagraph) {
-          structure.push({ type: 'paragraph', content: currentParagraph.trim() });
-          currentParagraph = '';
-        }
-        structure.push({ type: 'listItem', content: element.text.trim() });
-        break;
-      default:
-        currentParagraph += element.text + ' ';
+    if (element.type === 'listItem') {
+      if (!currentList) {
+        currentList = { type: 'list', items: [] };
+        structure.push(currentList);
+      }
+      currentList.items.push(element.content);
+    } else {
+      currentList = null;
+      structure.push({
+        type: element.type,
+        content: element.content
+      });
     }
   });
-
-  if (currentParagraph) {
-    structure.push({ type: 'paragraph', content: currentParagraph.trim() });
-  }
 
   return structure;
 };
@@ -60,12 +118,16 @@ const generateStructuredContent = (classifiedElements) => {
 const generateMdxFromStructure = (structure) => {
   return structure.map(element => {
     switch(element.type) {
-      case 'header':
-        return '#'.repeat(element.level) + ' ' + element.content + '\n\n';
-      case 'listItem':
-        return '* ' + element.content + '\n';
+      case 'h1':
+        return `# ${element.content}\n\n`;
+      case 'h2':
+        return `## ${element.content}\n\n`;
+      case 'h3':
+        return `### ${element.content}\n\n`;
+      case 'list':
+        return element.items.map(item => `- ${item}\n`).join('') + '\n';
       case 'paragraph':
-        return element.content + '\n\n';
+        return `${element.content}\n\n`;
       default:
         return '';
     }
@@ -85,6 +147,13 @@ const convertPdfToMdx = async (pdfFile, setProgress) => {
     mdxContent += generateMdxFromStructure(structuredContent);
     setProgress((i / pdf.numPages) * 100);
   }
+
+  // Clean up the MDX content
+  mdxContent = mdxContent
+    .replace(/\n{3,}/g, '\n\n') // Remove excessive newlines
+    .replace(/\*\*\s*\*\*/g, '') // Remove empty bold tags
+    .replace(/\*\s*\*/g, '') // Remove empty italic tags
+    .trim();
 
   return mdxContent;
 };
