@@ -10,7 +10,7 @@ const extractLayoutInfo = async (page) => {
   return textContent.items.map(item => ({
     text: item.str,
     x: item.transform[4],
-    y: item.transform[5], // Fixed: Use Y coordinate directly
+    y: viewport.height - item.transform[5], // Restore viewport height subtraction
     width: item.width,
     height: item.height,
     fontName: item.fontName,
@@ -59,13 +59,13 @@ const classifyElements = (layout) => {
   const classifiedLines = [];
   let currentIndentLevel = 0;
 
-  // Sort elements by Y position (top to bottom) and X position (left to right)
+  // Sort elements by Y position (bottom to top) and X position (left to right)
   layout.sort((a, b) => {
     const yDiff = Math.abs(a.y - b.y);
     if (yDiff < metrics.averageLineHeight / 2) {
       return a.x - b.x;
     }
-    return a.y - b.y; // Fixed: Sort from top to bottom
+    return a.y - b.y; // Sort from top to bottom
   });
 
   // Group elements by line with precise positioning
