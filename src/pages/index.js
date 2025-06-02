@@ -4,6 +4,7 @@ import MdxEditor from '../components/MdxEditor';
 import FileUploader from '../components/FileUploader';
 import ProgressBar from '../components/ProgressBar';
 import MdxPreview from '../components/MdxPreview';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { convertPdfToMdx } from '../utils/pdfToMdxConverter';
 import { saveAs } from 'file-saver';
 import { Button } from '@/components/ui/button';
@@ -76,11 +77,14 @@ const HomePage = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container py-6">
-          <h1 className="text-2xl font-bold">PDF to MDX Converter</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">PDF to MDX Converter</h1>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
-      <main className="container py-6">
+      <main className="container py-6 animate-in fade-in duration-500">
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-4 items-center justify-between">
@@ -98,8 +102,12 @@ const HomePage = () => {
                 <Button
                   onClick={handleConvert}
                   disabled={!pdfFile || isProcessing}
+                  className="relative overflow-hidden"
                 >
                   {isProcessing ? 'Converting...' : 'Convert to MDX'}
+                  {isProcessing && (
+                    <span className="absolute inset-0 bg-white/20 animate-pulse" />
+                  )}
                 </Button>
                 <Button
                   variant="secondary"
@@ -129,7 +137,7 @@ const HomePage = () => {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="min-h-[600px]">
+          <Card className="min-h-[600px] transition-shadow hover:shadow-lg">
             <CardHeader>
               <CardTitle>PDF Preview</CardTitle>
             </CardHeader>
@@ -146,7 +154,7 @@ const HomePage = () => {
             </CardContent>
           </Card>
 
-          <Card className="min-h-[600px]">
+          <Card className="min-h-[600px] transition-shadow hover:shadow-lg">
             <CardHeader>
               <CardTitle>{showPreview ? 'MDX Preview' : 'MDX Editor'}</CardTitle>
             </CardHeader>
