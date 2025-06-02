@@ -6,6 +6,8 @@ import ProgressBar from '../components/ProgressBar';
 import MdxPreview from '../components/MdxPreview';
 import { convertPdfToMdx } from '../utils/pdfToMdxConverter';
 import { saveAs } from 'file-saver';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const HomePage = () => {
   const [pdfFile, setPdfFile] = useState(null);
@@ -71,88 +73,95 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold text-gray-900">PDF to MDX Converter</h1>
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container py-6">
+          <h1 className="text-2xl font-bold">PDF to MDX Converter</h1>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="card p-6 mb-6">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex items-center gap-4">
-              <FileUploader onPdfUpload={handlePdfUpload} fileInputRef={fileInputRef} />
-              <button
-                onClick={handleClearPdf}
-                className="btn btn-secondary"
-                disabled={!pdfFile && !mdxContent}
-              >
-                Clear All
-              </button>
+      <main className="container py-6">
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex items-center gap-4">
+                <FileUploader onPdfUpload={handlePdfUpload} fileInputRef={fileInputRef} />
+                <Button
+                  variant="outline"
+                  onClick={handleClearPdf}
+                  disabled={!pdfFile && !mdxContent}
+                >
+                  Clear All
+                </Button>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleConvert}
+                  disabled={!pdfFile || isProcessing}
+                >
+                  {isProcessing ? 'Converting...' : 'Convert to MDX'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={handleTogglePreview}
+                  disabled={!mdxContent}
+                >
+                  {showPreview ? 'Edit MDX' : 'Preview MDX'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleSaveMdx}
+                  disabled={!mdxContent}
+                >
+                  Save MDX
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleClearEditor}
+                  disabled={!mdxContent}
+                >
+                  Clear Editor
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleConvert}
-                className="btn btn-primary"
-                disabled={!pdfFile || isProcessing}
-              >
-                {isProcessing ? 'Converting...' : 'Convert to MDX'}
-              </button>
-              <button
-                onClick={handleTogglePreview}
-                className="btn btn-warning"
-                disabled={!mdxContent}
-              >
-                {showPreview ? 'Edit MDX' : 'Preview MDX'}
-              </button>
-              <button
-                onClick={handleSaveMdx}
-                className="btn btn-success"
-                disabled={!mdxContent}
-              >
-                Save MDX
-              </button>
-              <button
-                onClick={handleClearEditor}
-                className="btn btn-danger"
-                disabled={!mdxContent}
-              >
-                Clear Editor
-              </button>
-            </div>
-          </div>
-          {isProcessing && <ProgressBar progress={progress} />}
-        </div>
+            {isProcessing && <ProgressBar progress={progress} />}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card p-6 min-h-[600px]">
-            <h2 className="text-lg font-semibold mb-4 text-gray-900">PDF Preview</h2>
-            <div className="h-[calc(100%-2rem)] overflow-auto">
-              {pdfFile ? (
-                <PdfViewer pdfUrl={pdfFile} />
-              ) : (
-                <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                  <p className="text-gray-500">Upload a PDF file to begin</p>
-                </div>
-              )}
-            </div>
-          </div>
+          <Card className="min-h-[600px]">
+            <CardHeader>
+              <CardTitle>PDF Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[calc(100%-2rem)] overflow-auto">
+                {pdfFile ? (
+                  <PdfViewer pdfUrl={pdfFile} />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-muted rounded-lg border-2 border-dashed">
+                    <p className="text-muted-foreground">Upload a PDF file to begin</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="card p-6 min-h-[600px]">
-            <h2 className="text-lg font-semibold mb-4 text-gray-900">
-              {showPreview ? 'MDX Preview' : 'MDX Editor'}
-            </h2>
-            <div className="h-[calc(100%-2rem)]">
-              {showPreview ? (
-                <div className="h-full overflow-auto bg-gray-50 rounded-lg p-4">
-                  <MdxPreview content={mdxContent} />
-                </div>
-              ) : (
-                <MdxEditor mdxContent={mdxContent} setMdxContent={setMdxContent} />
-              )}
-            </div>
-          </div>
+          <Card className="min-h-[600px]">
+            <CardHeader>
+              <CardTitle>{showPreview ? 'MDX Preview' : 'MDX Editor'}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[calc(100%-2rem)]">
+                {showPreview ? (
+                  <div className="h-full overflow-auto bg-muted rounded-lg p-4">
+                    <MdxPreview content={mdxContent} />
+                  </div>
+                ) : (
+                  <MdxEditor mdxContent={mdxContent} setMdxContent={setMdxContent} />
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

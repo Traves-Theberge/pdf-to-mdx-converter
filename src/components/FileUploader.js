@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 const FileUploader = ({ onPdfUpload, fileInputRef }) => {
   const handlePdfChange = (event) => {
@@ -23,9 +24,9 @@ const FileUploader = ({ onPdfUpload, fileInputRef }) => {
         ref={fileInputRef}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
       />
-      <button className="btn btn-secondary">
+      <Button variant="outline">
         Choose PDF file
-      </button>
+      </Button>
     </div>
   );
 };
