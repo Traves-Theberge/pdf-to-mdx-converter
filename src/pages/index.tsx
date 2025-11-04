@@ -18,16 +18,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { Save, FileX, Eye, Edit, RefreshCw } from 'lucide-react';
 
+interface ConfirmDialogState {
+  open: boolean;
+  type: 'clearEditor' | 'clearAll' | null;
+  title?: string;
+  description?: string;
+}
+
 const HomePage = () => {
-  const [pdfFile, setPdfFile] = useState(null);
-  const [pdfFileName, setPdfFileName] = useState('');
-  const [mdxContent, setMdxContent] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [showPreview, setShowPreview] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
-  const fileInputRef = useRef(null);
-  const mainRef = useRef(null);
+  const [pdfFile, setPdfFile] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState<string>('');
+  const [mdxContent, setMdxContent] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({ open: false, type: null });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,7 +45,7 @@ const HomePage = () => {
     );
   }, []);
 
-  const handlePdfUpload = (file, fileName) => {
+  const handlePdfUpload = (file: string, fileName: string) => {
     setPdfFile(file);
     setPdfFileName(fileName);
     setMdxContent('');
@@ -51,7 +58,7 @@ const HomePage = () => {
     );
   };
 
-  const handleUploadError = (errorMessage) => {
+  const handleUploadError = (errorMessage: string) => {
     toast({
       variant: "destructive",
       title: "Upload Error",
@@ -68,7 +75,7 @@ const HomePage = () => {
       const content = await convertPdfToMdx(pdfFile, setProgress);
       setMdxContent(content);
       setShowPreview(false);
-      
+
       gsap.fromTo(
         '.conversion-complete',
         { scale: 0.9, opacity: 0 },

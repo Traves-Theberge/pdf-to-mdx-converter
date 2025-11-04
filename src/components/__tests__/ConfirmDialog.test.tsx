@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import ConfirmDialog from '../ConfirmDialog';
 
 describe('ConfirmDialog', () => {
-  const mockOnOpenChange = jest.fn();
-  const mockOnConfirm = jest.fn();
+  const mockOnOpenChange = jest.fn<void, [boolean]>();
+  const mockOnConfirm = jest.fn<void, []>();
 
   beforeEach(() => {
     jest.clearAllMocks();

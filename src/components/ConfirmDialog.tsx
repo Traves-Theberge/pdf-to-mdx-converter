@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +10,27 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const ConfirmDialog = ({ open, onOpenChange, title, description, onConfirm, confirmText = "Confirm", cancelText = "Cancel", variant = "default" }) => {
+interface ConfirmDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title?: string;
+  description?: string;
+  onConfirm: () => void;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'default' | 'destructive';
+}
+
+const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  open,
+  onOpenChange,
+  title,
+  description,
+  onConfirm,
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  variant = "default"
+}) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -31,17 +50,6 @@ const ConfirmDialog = ({ open, onOpenChange, title, description, onConfirm, conf
       </AlertDialogContent>
     </AlertDialog>
   );
-};
-
-ConfirmDialog.propTypes = {
-  open: PropTypes.bool.isRequired,
-  onOpenChange: PropTypes.func.isRequired,
-  title: PropTypes.string,
-  description: PropTypes.string,
-  onConfirm: PropTypes.func.isRequired,
-  confirmText: PropTypes.string,
-  cancelText: PropTypes.string,
-  variant: PropTypes.string,
 };
 
 export default ConfirmDialog;

@@ -1,7 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
-const ProgressBar = ({ progress }) => (
+interface ProgressBarProps {
+  progress: number;
+}
+
+const ProgressBar: React.FC<ProgressBarProps> = ({ progress }) => (
   <div className="mt-6">
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center space-x-2">
@@ -20,9 +23,5 @@ const ProgressBar = ({ progress }) => (
     </div>
   </div>
 );
-
-ProgressBar.propTypes = {
-  progress: PropTypes.number.isRequired,
-};
 
 export default ProgressBar;

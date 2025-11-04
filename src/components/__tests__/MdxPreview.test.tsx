@@ -50,7 +50,7 @@ jest.mock('react-markdown', () => {
 
 describe('MdxPreview', () => {
   it('renders markdown content correctly', () => {
-    const content = '# Hello World';
+    const content: string = '# Hello World';
     render(<MdxPreview content={content} />);
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading).toHaveTextContent('Hello World');
@@ -67,13 +67,13 @@ describe('MdxPreview', () => {
   });
 
   it('renders paragraph text', () => {
-    const content = 'This is a paragraph.';
+    const content: string = 'This is a paragraph.';
     render(<MdxPreview content={content} />);
     expect(screen.getByText('This is a paragraph.')).toBeInTheDocument();
   });
 
   it('renders lists correctly', () => {
-    const content = '- Item 1\n- Item 2\n- Item 3';
+    const content: string = '- Item 1\n- Item 2\n- Item 3';
     render(<MdxPreview content={content} />);
     expect(screen.getByText('Item 1')).toBeInTheDocument();
     expect(screen.getByText('Item 2')).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe('MdxPreview', () => {
   });
 
   it('renders code blocks', () => {
-    const content = '```javascript\nconst x = 5;\n```';
+    const content: string = '```javascript\nconst x = 5;\n```';
     render(<MdxPreview content={content} />);
     expect(screen.getByText(/const x = 5/)).toBeInTheDocument();
   });

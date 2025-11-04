@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
-import PropTypes from 'prop-types';
-import { useDropzone } from 'react-dropzone';
+import { useDropzone, FileRejection } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,8 +12,14 @@ import {
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-const FileUploader = ({ onPdfUpload, fileInputRef, onError }) => {
-  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+interface FileUploaderProps {
+  onPdfUpload: (fileData: string, fileName: string) => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  onError?: (message: string) => void;
+}
+
+const FileUploader: React.FC<FileUploaderProps> = ({ onPdfUpload, fileInputRef, onError }) => {
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
     // Handle rejected files
     if (rejectedFiles.length > 0) {
       const rejection = rejectedFiles[0];
@@ -37,8 +42,10 @@ const FileUploader = ({ onPdfUpload, fileInputRef, onError }) => {
       }
 
       const reader = new FileReader();
-      reader.onload = (e) => {
-        onPdfUpload(e.target.result, file.name);
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        if (e.target?.result) {
+          onPdfUpload(e.target.result as string, file.name);
+        }
       };
       reader.onerror = () => {
         onError?.('Failed to read file. Please try again.');
@@ -75,13 +82,13 @@ const FileUploader = ({ onPdfUpload, fileInputRef, onError }) => {
           />
         )}
       </AnimatePresence>
-      
-      <input 
-        {...getInputProps()} 
+
+      <input
+        {...getInputProps()}
         ref={fileInputRef}
         className="hidden"
       />
-      
+
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -108,15 +115,6 @@ const FileUploader = ({ onPdfUpload, fileInputRef, onError }) => {
       </Tooltip>
     </div>
   );
-};
-
-FileUploader.propTypes = {
-  onPdfUpload: PropTypes.func.isRequired,
-  fileInputRef: PropTypes.oneOfType([
-    PropTypes.func,
-    PropTypes.shape({ current: PropTypes.instanceOf(Element) })
-  ]).isRequired,
-  onError: PropTypes.func,
 };
 
 export default FileUploader;

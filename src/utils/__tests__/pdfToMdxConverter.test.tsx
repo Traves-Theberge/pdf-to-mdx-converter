@@ -17,7 +17,21 @@ describe('pdfToMdxConverter', () => {
   describe('Configuration Constants', () => {
     it('should define standard configuration values', () => {
       // Testing that our refactoring to use constants is correct
-      const expectedConfig = {
+      interface ExpectedConfig {
+        LINE_HEIGHT_THRESHOLD: number;
+        INDENT_UNIT: number;
+        FONT_SIZE_H1: number;
+        FONT_SIZE_H1_BOLD: number;
+        FONT_SIZE_H2: number;
+        FONT_SIZE_H2_BOLD: number;
+        FONT_SIZE_H3: number;
+        FONT_SIZE_H3_BOLD: number;
+        CODE_FONT_PATTERNS: string[];
+        MIN_INDENT_FOR_LIST: number;
+        INDENT_SPACES: number;
+      }
+
+      const expectedConfig: ExpectedConfig = {
         LINE_HEIGHT_THRESHOLD: 5,
         INDENT_UNIT: 20,
         FONT_SIZE_H1: 24,
@@ -40,8 +54,8 @@ describe('pdfToMdxConverter', () => {
   });
 
   describe('List Detection Patterns', () => {
-    const bulletPattern = /^[•\-\*\u2022\u2023\u25E6\u2043\u2219]\s*/;
-    const numberedPattern = /^\d+[.)]\s*/;
+    const bulletPattern: RegExp = /^[•\-\*\u2022\u2023\u25E6\u2043\u2219]\s*/;
+    const numberedPattern: RegExp = /^\d+[.)]\s*/;
 
     it('should match bullet list markers', () => {
       expect(bulletPattern.test('• Item')).toBe(true);
@@ -63,9 +77,9 @@ describe('pdfToMdxConverter', () => {
 
   describe('MDX Formatting', () => {
     it('should handle heading levels correctly', () => {
-      const h1 = '# Heading 1';
-      const h2 = '## Heading 2';
-      const h3 = '### Heading 3';
+      const h1: string = '# Heading 1';
+      const h2: string = '## Heading 2';
+      const h3: string = '### Heading 3';
 
       expect(h1.startsWith('#')).toBe(true);
       expect(h2.startsWith('##')).toBe(true);
@@ -73,7 +87,7 @@ describe('pdfToMdxConverter', () => {
     });
 
     it('should format list items with dashes', () => {
-      const listItem = '- List item';
+      const listItem: string = '- List item';
       expect(listItem.startsWith('- ')).toBe(true);
     });
   });
