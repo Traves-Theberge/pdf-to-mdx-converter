@@ -1,8 +1,33 @@
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+// Use the installed pdfjs-dist version dynamically for the worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
 
 const DEBUG = true;
+
+// Configuration constants for PDF parsing and MDX conversion
+const CONFIG = {
+  // Layout detection
+  LINE_HEIGHT_THRESHOLD: 5,
+  INDENT_UNIT: 20,
+
+  // Font size thresholds for heading detection
+  FONT_SIZE_H1: 24,
+  FONT_SIZE_H1_BOLD: 20,
+  FONT_SIZE_H2: 20,
+  FONT_SIZE_H2_BOLD: 16,
+  FONT_SIZE_H3: 16,
+  FONT_SIZE_H3_BOLD: 14,
+
+  // Font name patterns for code detection
+  CODE_FONT_PATTERNS: ['mono', 'courier'],
+
+  // List detection
+  MIN_INDENT_FOR_LIST: 20,
+
+  // Formatting
+  INDENT_SPACES: 2,
+};
 
 const log = (message, data = null) => {
   if (DEBUG) {
@@ -62,13 +87,13 @@ const isListItem = (text, x) => {
   const numberedListMarkers = /^\d+[.)]\s*/;
   const alphaListMarkers = /^[a-zA-Z][.)]\s*/;
   const romanNumeralMarkers = /^[ivxIVX]+[.)]\s*/;
-  
-  const isIndented = x > 20;
-  const hasListMarker = bulletListMarkers.test(text) || 
-                       numberedListMarkers.test(text) || 
+
+  const isIndented = x > CONFIG.MIN_INDENT_FOR_LIST;
+  const hasListMarker = bulletListMarkers.test(text) ||
+                       numberedListMarkers.test(text) ||
                        alphaListMarkers.test(text) ||
                        romanNumeralMarkers.test(text);
-  
+
   return hasListMarker || (isIndented && text.trim().length > 0);
 };
 
@@ -79,14 +104,13 @@ const classifyElements = (layout) => {
   let currentLine = [];
   let prevY = null;
   let prevPageNumber = null;
-  const LINE_HEIGHT_THRESHOLD = 5;
 
   // Sort by page number first, then by vertical position, then horizontal
   layout.sort((a, b) => {
     if (a.pageNumber !== b.pageNumber) {
       return a.pageNumber - b.pageNumber;
     }
-    if (Math.abs(a.y - b.y) < LINE_HEIGHT_THRESHOLD) {
+    if (Math.abs(a.y - b.y) < CONFIG.LINE_HEIGHT_THRESHOLD) {
       return a.x - b.x;
     }
     return b.y - a.y; // Reverse Y order to handle top-to-bottom
@@ -106,7 +130,7 @@ const classifyElements = (layout) => {
     if (
       prevPageNumber === null || // First item
       item.pageNumber !== prevPageNumber || // New page
-      (prevY !== null && Math.abs(item.y - prevY) >= LINE_HEIGHT_THRESHOLD) || // Y difference
+      (prevY !== null && Math.abs(item.y - prevY) >= CONFIG.LINE_HEIGHT_THRESHOLD) || // Y difference
       i === layout.length - 1 // Last item
     ) {
       if (currentLine.length > 0) {
@@ -136,23 +160,25 @@ const classifyElements = (layout) => {
     const text = line.map(item => item.text).join(' ').trim();
     const maxFontSize = Math.max(...line.map(item => item.fontSize));
     const firstItem = line[0];
-    const indentLevel = Math.floor(firstItem.x / 20);
+    const indentLevel = Math.floor(firstItem.x / CONFIG.INDENT_UNIT);
 
     // Improved heading detection
     let type = 'paragraph';
-    if (maxFontSize >= 24 || (maxFontSize >= 20 && line.every(item => item.isBold))) {
+    if (maxFontSize >= CONFIG.FONT_SIZE_H1 || (maxFontSize >= CONFIG.FONT_SIZE_H1_BOLD && line.every(item => item.isBold))) {
       type = 'h1';
-    } else if (maxFontSize >= 20 || (maxFontSize >= 16 && line.every(item => item.isBold))) {
+    } else if (maxFontSize >= CONFIG.FONT_SIZE_H2 || (maxFontSize >= CONFIG.FONT_SIZE_H2_BOLD && line.every(item => item.isBold))) {
       type = 'h2';
-    } else if (maxFontSize >= 16 || (maxFontSize >= 14 && line.every(item => item.isBold))) {
+    } else if (maxFontSize >= CONFIG.FONT_SIZE_H3 || (maxFontSize >= CONFIG.FONT_SIZE_H3_BOLD && line.every(item => item.isBold))) {
       type = 'h3';
     } else if (isListItem(text, firstItem.x)) {
       type = 'listItem';
     }
 
     // Check if the line appears to be a code block
-    const isCode = line.every(item => item.fontName?.toLowerCase().includes('mono') || 
-                                    item.fontName?.toLowerCase().includes('courier'));
+    const isCode = line.every(item => {
+      const fontNameLower = item.fontName?.toLowerCase() || '';
+      return CONFIG.CODE_FONT_PATTERNS.some(pattern => fontNameLower.includes(pattern));
+    });
 
     const element = {
       type: isCode ? 'code' : type,
@@ -193,7 +219,7 @@ const formatContent = (elements) => {
 
   elements.forEach((element, index) => {
     const nextElement = elements[index + 1];
-    const indent = '  '.repeat(element.indentLevel);
+    const indent = ' '.repeat(CONFIG.INDENT_SPACES * element.indentLevel);
 
     // Add page breaks between pages
     if (element.pageNumber !== currentPage) {

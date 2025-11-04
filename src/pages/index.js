@@ -4,9 +4,12 @@ import MdxEditor from '../components/MdxEditor';
 import FileUploader from '../components/FileUploader';
 import ProgressBar from '../components/ProgressBar';
 import MdxPreview from '../components/MdxPreview';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { Toaster } from '../components/ErrorToast';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { convertPdfToMdx } from '../utils/pdfToMdxConverter';
 import { saveAs } from 'file-saver';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import FadeIn from '@/components/animations/FadeIn';
@@ -22,8 +25,10 @@ const HomePage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const fileInputRef = useRef(null);
   const mainRef = useRef(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     gsap.fromTo(
@@ -38,12 +43,20 @@ const HomePage = () => {
     setPdfFileName(fileName);
     setMdxContent('');
     setProgress(0);
-    
+
     gsap.fromTo(
       '.upload-feedback',
       { scale: 0.9, opacity: 0 },
       { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out' }
     );
+  };
+
+  const handleUploadError = (errorMessage) => {
+    toast({
+      variant: "destructive",
+      title: "Upload Error",
+      description: errorMessage,
+    });
   };
 
   const handleConvert = async () => {
@@ -63,7 +76,11 @@ const HomePage = () => {
       );
     } catch (error) {
       console.error('Error processing PDF:', error);
-      alert('An error occurred while processing the PDF. Please try again.');
+      toast({
+        variant: "destructive",
+        title: "Conversion Error",
+        description: "An error occurred while processing the PDF. Please try again.",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -79,13 +96,27 @@ const HomePage = () => {
   };
 
   const handleClearEditor = () => {
-    if (confirm('Are you sure you want to clear the editor content?')) {
-      setMdxContent('');
-    }
+    setConfirmDialog({
+      open: true,
+      type: 'clearEditor',
+      title: 'Clear Editor Content',
+      description: 'Are you sure you want to clear the editor content? This action cannot be undone.',
+    });
   };
 
   const handleClearPdf = () => {
-    if (confirm('Are you sure you want to clear all content?')) {
+    setConfirmDialog({
+      open: true,
+      type: 'clearAll',
+      title: 'Clear All Content',
+      description: 'Are you sure you want to clear all content? This will remove the PDF file and MDX content.',
+    });
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmDialog.type === 'clearEditor') {
+      setMdxContent('');
+    } else if (confirmDialog.type === 'clearAll') {
       setPdfFile(null);
       setPdfFileName('');
       setMdxContent('');
@@ -96,11 +127,22 @@ const HomePage = () => {
         fileInputRef.current.value = '';
       }
     }
+    setConfirmDialog({ open: false, type: null });
   };
 
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
+        <Toaster />
+        <ConfirmDialog
+          open={confirmDialog.open}
+          onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          onConfirm={handleConfirmAction}
+          confirmText="Yes, clear"
+          variant="destructive"
+        />
         <header className="border-b bg-card">
           <div className="container py-4">
             <div className="flex items-center justify-between header-content">
@@ -119,7 +161,11 @@ const HomePage = () => {
               <CardContent className="p-6">
                 <div className="flex flex-wrap gap-4 items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <FileUploader onPdfUpload={handlePdfUpload} fileInputRef={fileInputRef} />
+                    <FileUploader
+                      onPdfUpload={handlePdfUpload}
+                      fileInputRef={fileInputRef}
+                      onError={handleUploadError}
+                    />
                     <Button
                       variant="outline"
                       onClick={handleClearPdf}
