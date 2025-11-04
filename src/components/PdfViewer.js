@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import { zoomPlugin } from '@react-pdf-viewer/zoom';
@@ -31,6 +32,10 @@ const PdfViewer = ({ pdfUrl }) => {
       </Worker>
     </div>
   );
+};
+
+PdfViewer.propTypes = {
+  pdfUrl: PropTypes.string.isRequired,
 };
 
 export default PdfViewer;

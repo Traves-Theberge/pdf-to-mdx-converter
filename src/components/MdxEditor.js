@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import dynamic from 'next/dynamic';
 import { useTheme } from 'next-themes';
 import { githubDark, githubLight } from '@uiw/codemirror-theme-github';
@@ -72,6 +73,11 @@ const MdxEditor = ({ mdxContent, setMdxContent }) => {
       />
     </div>
   );
+};
+
+MdxEditor.propTypes = {
+  mdxContent: PropTypes.string.isRequired,
+  setMdxContent: PropTypes.func.isRequired,
 };
 
 export default MdxEditor;

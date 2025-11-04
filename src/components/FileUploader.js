@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
@@ -9,23 +10,49 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const FileUploader = ({ onPdfUpload, fileInputRef }) => {
-  const onDrop = useCallback((acceptedFiles) => {
+// Maximum file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const FileUploader = ({ onPdfUpload, fileInputRef, onError }) => {
+  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+    // Handle rejected files
+    if (rejectedFiles.length > 0) {
+      const rejection = rejectedFiles[0];
+      if (rejection.errors[0]?.code === 'file-too-large') {
+        onError?.('File is too large. Maximum file size is 10MB.');
+      } else if (rejection.errors[0]?.code === 'file-invalid-type') {
+        onError?.('Invalid file type. Please upload a PDF file.');
+      } else {
+        onError?.('File upload failed. Please try again.');
+      }
+      return;
+    }
+
     const file = acceptedFiles[0];
     if (file && file.type === 'application/pdf') {
+      // Double-check file size (belt and suspenders approach)
+      if (file.size > MAX_FILE_SIZE) {
+        onError?.('File is too large. Maximum file size is 10MB.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         onPdfUpload(e.target.result, file.name);
       };
+      reader.onerror = () => {
+        onError?.('Failed to read file. Please try again.');
+      };
       reader.readAsDataURL(file);
     }
-  }, [onPdfUpload]);
+  }, [onPdfUpload, onError]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'application/pdf': ['.pdf']
     },
+    maxSize: MAX_FILE_SIZE,
     multiple: false,
     noClick: true,
   });
@@ -76,11 +103,20 @@ const FileUploader = ({ onPdfUpload, fileInputRef }) => {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Click to browse or drag and drop a PDF</p>
+          <p>Click to browse or drag and drop a PDF (max 10MB)</p>
         </TooltipContent>
       </Tooltip>
     </div>
   );
+};
+
+FileUploader.propTypes = {
+  onPdfUpload: PropTypes.func.isRequired,
+  fileInputRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.instanceOf(Element) })
+  ]).isRequired,
+  onError: PropTypes.func,
 };
 
 export default FileUploader;
