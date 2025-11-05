@@ -3,7 +3,7 @@
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/Traves-Theberge/pdf-to-mdx-converter)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE.md)
 
-A modern web application that converts PDF files into MDX (Markdown with JSX) format, featuring an integrated PDF viewer, MDX editor, and live preview. Built with Next.js 14, React 18, and Tailwind CSS.
+A modern web application that converts PDF files into MDX (Markdown with JSX) format, featuring an integrated PDF viewer, MDX editor, and live preview. Built with Next.js 16, React 19, TypeScript, and Tailwind CSS.
 
 > **Note**: This project is functional and includes comprehensive testing. The PDF parsing uses intelligent heuristics for text classification. See [Known Limitations](#known-limitations) for details.
 
@@ -24,16 +24,17 @@ A modern web application that converts PDF files into MDX (Markdown with JSX) fo
 ### Quality & UX
 - 🌗 **Dark Mode** - Full theme support (light/dark/system)
 - ✅ **File Validation** - File type and size validation with user-friendly errors
-- 🎯 **Type Safety** - PropTypes on all components for runtime validation
+- 🎯 **Type Safety** - Full TypeScript coverage with strict type checking
 - ♿ **Accessible** - Custom dialogs and toast notifications
-- 🧪 **Tested** - 16 passing unit tests with Jest and React Testing Library
+- 🧪 **Tested** - 22 passing unit tests with Jest and React Testing Library
 - 📱 **Responsive** - Works on desktop, tablet, and mobile
 
 ### Technical Features
 - ⚙️ **Configurable** - Centralized configuration for parsing parameters
 - 🎨 **Modern UI** - Built with Radix UI and shadcn/ui components
-- 🚀 **Optimized** - Next.js 14 with App Router capabilities
+- 🚀 **Optimized** - Next.js 16 with Turbopack bundler (default)
 - 🔧 **Maintainable** - Clean code structure with proper separation of concerns
+- 📘 **TypeScript** - Full type safety across the entire codebase
 
 ## 📁 Project Structure
 
@@ -41,38 +42,39 @@ A modern web application that converts PDF files into MDX (Markdown with JSX) fo
 src/
 ├── components/
 │   ├── ui/                    # Reusable UI primitives (Radix UI)
-│   │   ├── alert-dialog.jsx   # Confirmation dialogs
-│   │   ├── toast.jsx          # Toast notifications
-│   │   ├── button.jsx         # Button component
-│   │   ├── card.jsx           # Card layouts
+│   │   ├── alert-dialog.tsx   # Confirmation dialogs
+│   │   ├── toast.tsx          # Toast notifications
+│   │   ├── button.tsx         # Button component
+│   │   ├── card.tsx           # Card layouts
 │   │   └── ...
 │   ├── animations/            # Animation components (GSAP, Framer Motion)
-│   ├── FileUploader.js        # PDF file upload with validation
-│   ├── PdfViewer.js           # PDF display component
-│   ├── MdxEditor.js           # CodeMirror-based MDX editor
-│   ├── MdxPreview.js          # MDX rendering component
-│   ├── ProgressBar.js         # Conversion progress indicator
-│   ├── ConfirmDialog.js       # Reusable confirmation dialog
-│   ├── ErrorToast.js          # Toast notification wrapper
-│   └── __tests__/             # Component tests
+│   ├── FileUploader.tsx       # PDF file upload with validation
+│   ├── PdfViewer.tsx          # PDF display component
+│   ├── MdxEditor.tsx          # CodeMirror-based MDX editor
+│   ├── MdxPreview.tsx         # MDX rendering component
+│   ├── ProgressBar.tsx        # Conversion progress indicator
+│   ├── ConfirmDialog.tsx      # Reusable confirmation dialog
+│   ├── ErrorToast.tsx         # Toast notification wrapper
+│   └── __tests__/             # Component tests (TypeScript)
 ├── pages/
-│   ├── _app.js                # Next.js app wrapper with theme provider
-│   └── index.js               # Main application page
+│   ├── _app.tsx               # Next.js app wrapper with theme provider
+│   └── index.tsx              # Main application page
 ├── utils/
-│   ├── pdfToMdxConverter.js   # Core PDF parsing & conversion logic
-│   └── __tests__/             # Utility tests
+│   ├── pdfToMdxConverter.ts   # Core PDF parsing & conversion logic
+│   └── __tests__/             # Utility tests (TypeScript)
 ├── hooks/
-│   └── use-toast.js           # Toast notification hook
+│   └── use-toast.ts           # Toast notification hook
 ├── lib/
-│   └── utils.js               # Helper utilities (cn function)
+│   └── utils.ts               # Helper utilities (cn function)
 └── styles/
     └── globals.css            # Global styles & theme variables
 ```
 
 ## 🛠️ Tech Stack
 
-- **Framework**: [Next.js 14](https://nextjs.org/) - React framework with App Router
-- **UI Library**: [React 18](https://react.dev/) - Component-based UI
+- **Framework**: [Next.js 16](https://nextjs.org/) - React framework with Turbopack bundler
+- **UI Library**: [React 19](https://react.dev/) - Component-based UI
+- **Language**: [TypeScript 5](https://www.typescriptlang.org/) - Static type checking
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
 - **Components**: [Radix UI](https://www.radix-ui.com/) - Accessible component primitives
 - **PDF Processing**: [PDF.js](https://mozilla.github.io/pdf.js/) - PDF rendering and parsing
@@ -82,13 +84,13 @@ src/
 - **Animations**: [Framer Motion](https://www.framer.com/motion/) & [GSAP](https://greensock.com/gsap/)
 - **Theme**: [next-themes](https://github.com/pacocoursey/next-themes) - Dark mode support
 - **Testing**: [Jest](https://jestjs.io/) & [React Testing Library](https://testing-library.com/react)
-- **Type Checking**: [PropTypes](https://www.npmjs.com/package/prop-types) - Runtime type validation
+- **Bundler**: [Turbopack](https://turbo.build/pack) - Fast incremental bundler (default in Next.js 16)
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.9.0+ (required for Next.js 16)
 - npm or yarn
 
 ### Installation
@@ -133,9 +135,10 @@ npm test
 ```
 
 **Test Coverage:**
-- ✅ 16 tests across 4 test suites
+- ✅ 22 tests across 4 test suites (all TypeScript)
 - ✅ Component tests (ProgressBar, MdxPreview, ConfirmDialog)
 - ✅ Utility tests (PDF converter configuration)
+- ✅ Full type safety with TypeScript
 
 ## 🎯 Usage
 
@@ -160,9 +163,9 @@ npm test
 
 ## ⚙️ Configuration
 
-The PDF parser uses configurable constants in `src/utils/pdfToMdxConverter.js`:
+The PDF parser uses configurable constants in `src/utils/pdfToMdxConverter.ts`:
 
-```javascript
+```typescript
 const CONFIG = {
   LINE_HEIGHT_THRESHOLD: 5,      // Line grouping threshold
   INDENT_UNIT: 20,                // Indent detection unit
@@ -172,7 +175,7 @@ const CONFIG = {
   CODE_FONT_PATTERNS: ['mono', 'courier'],  // Code font detection
   MIN_INDENT_FOR_LIST: 20,        // List indent threshold
   INDENT_SPACES: 2,               // MDX indent spaces
-};
+} as const;
 ```
 
 ## 🎨 Customization
@@ -192,9 +195,9 @@ The app uses CSS variables for theming. Modify `src/styles/globals.css`:
 
 ### File Size Limit
 
-Change the maximum file size in `src/components/FileUploader.js`:
+Change the maximum file size in `src/components/FileUploader.tsx`:
 
-```javascript
+```typescript
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 ```
 
@@ -227,7 +230,7 @@ This project has a known vulnerability in `pdfjs-dist` that cannot be immediatel
 - 10MB file size limit
 - File type validation
 - Client-side processing (sandboxed)
-- PropTypes runtime validation
+- TypeScript compile-time type checking
 
 ## 🤝 Contributing
 
@@ -241,13 +244,21 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 Recent Improvements
 
+### v0.3.0 - TypeScript Migration (Latest)
+- ✅ **Migrated entire codebase to TypeScript** - Full type safety
+- ✅ **Upgraded to Next.js 16.0.1** - Turbopack bundler now default
+- ✅ **Upgraded to React 19** - Latest React features
+- ✅ **Converted all 30 files** to TypeScript (.ts/.tsx)
+- ✅ **22 passing tests** with TypeScript support
+- ✅ **Zero TypeScript errors** - Complete type coverage
+
+### v0.2.0 - Code Quality Improvements
 - ✅ Added dark mode support with theme-aware colors
 - ✅ Extracted magic numbers to configuration constants
 - ✅ Implemented file size validation (10MB limit)
 - ✅ Replaced browser alerts with custom dialogs
-- ✅ Added PropTypes for type safety
+- ✅ Added PropTypes for type safety (now TypeScript)
 - ✅ Set up comprehensive testing with Jest
-- ✅ Created 16 unit tests (all passing)
 - ✅ Added toast notifications for errors
 - ✅ Improved PDF worker URL handling
 - ✅ Added security documentation
@@ -270,4 +281,4 @@ For questions or feedback, please open an issue on GitHub.
 
 ---
 
-**Made with ❤️ using Next.js and React**
+**Made with ❤️ using Next.js 16, React 19, and TypeScript**
